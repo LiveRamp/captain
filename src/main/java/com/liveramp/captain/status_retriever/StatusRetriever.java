@@ -1,6 +1,5 @@
 package com.liveramp.captain.status_retriever;
 
-
 import com.liveramp.captain.status.CaptainStatus;
 
 public interface StatusRetriever {

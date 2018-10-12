@@ -1,8 +1,7 @@
 package com.liveramp.captain.request_lock.running_ids_manager_request_lock;
 
-import java.util.Set;
-
 import com.liveramp.captain.request_lock.CaptainRequestLockWithRunningIds;
+import java.util.Set;
 
 public class RunningIdsManagerCaptainLock implements CaptainRequestLockWithRunningIds {
   private final RunningIdsManager runningIdsManager;

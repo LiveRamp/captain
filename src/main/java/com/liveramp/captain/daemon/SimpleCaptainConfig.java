@@ -10,7 +10,8 @@ public class SimpleCaptainConfig extends CaptainRequestConfig {
   private CaptainStep step;
   private CaptainAppType appType;
 
-  public SimpleCaptainConfig(long id, CaptainStatus status, CaptainStep step, CaptainAppType appType) {
+  public SimpleCaptainConfig(
+      long id, CaptainStatus status, CaptainStep step, CaptainAppType appType) {
     this.id = id;
     this.status = status;
     this.step = step;

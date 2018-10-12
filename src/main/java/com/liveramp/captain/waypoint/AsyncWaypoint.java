@@ -13,7 +13,6 @@ import com.liveramp.captain.status_retriever.StatusRetriever;
 import com.liveramp.captain.status_retriever.StatusRetrieverFactory;
 import com.liveramp.captain.status_retriever.StatusRetrieverWrapperFactory;
 import com.liveramp.captain.step.CaptainStep;
-
 import java.util.Optional;
 
 public class AsyncWaypoint<ServiceHandle> implements Waypoint {
@@ -34,12 +33,31 @@ public class AsyncWaypoint<ServiceHandle> implements Waypoint {
     this.optionalStepPredicate = optionalStepPredicate;
   }
 
-  public AsyncWaypoint(CaptainStep step, RequestSubmitter<ServiceHandle> requestSubmitter, HandlePersistor<ServiceHandle> handlePersistor, StatusRetriever statusRetriever) {
-    this(step, new RequestSubmitterWrapperFactory<>(requestSubmitter), new HandlePersistorWrapperFactory<>(handlePersistor), new StatusRetrieverWrapperFactory(statusRetriever), Optional.empty());
+  public AsyncWaypoint(
+      CaptainStep step,
+      RequestSubmitter<ServiceHandle> requestSubmitter,
+      HandlePersistor<ServiceHandle> handlePersistor,
+      StatusRetriever statusRetriever) {
+    this(
+        step,
+        new RequestSubmitterWrapperFactory<>(requestSubmitter),
+        new HandlePersistorWrapperFactory<>(handlePersistor),
+        new StatusRetrieverWrapperFactory(statusRetriever),
+        Optional.empty());
   }
 
-  public AsyncWaypoint(CaptainStep step, RequestSubmitter<ServiceHandle> requestSubmitter, HandlePersistor<ServiceHandle> handlePersistor, StatusRetriever statusRetriever, StepPredicate stepPredicate) {
-    this(step, new RequestSubmitterWrapperFactory<>(requestSubmitter), new HandlePersistorWrapperFactory<>(handlePersistor), new StatusRetrieverWrapperFactory(statusRetriever), Optional.of(new StepPredicateWrapperFactory(stepPredicate)));
+  public AsyncWaypoint(
+      CaptainStep step,
+      RequestSubmitter<ServiceHandle> requestSubmitter,
+      HandlePersistor<ServiceHandle> handlePersistor,
+      StatusRetriever statusRetriever,
+      StepPredicate stepPredicate) {
+    this(
+        step,
+        new RequestSubmitterWrapperFactory<>(requestSubmitter),
+        new HandlePersistorWrapperFactory<>(handlePersistor),
+        new StatusRetrieverWrapperFactory(statusRetriever),
+        Optional.of(new StepPredicateWrapperFactory(stepPredicate)));
   }
 
   @Override

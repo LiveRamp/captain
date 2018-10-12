@@ -5,7 +5,6 @@ import com.liveramp.captain.status_retriever.StatusRetriever;
 import com.liveramp.captain.status_retriever.StatusRetrieverFactory;
 import com.liveramp.captain.status_retriever.StatusRetrieverWrapperFactory;
 import com.liveramp.captain.step.CaptainStep;
-
 import java.util.Optional;
 
 public class ControlFlowWaypoint implements Waypoint {
@@ -14,7 +13,10 @@ public class ControlFlowWaypoint implements Waypoint {
   private final StatusRetrieverFactory statusRetriever;
   private final Optional<StepPredicateFactory> optionalStepPredicate;
 
-  public ControlFlowWaypoint(CaptainStep step, StatusRetrieverFactory statusRetriever, Optional<StepPredicateFactory> optionalStepPredicate) {
+  public ControlFlowWaypoint(
+      CaptainStep step,
+      StatusRetrieverFactory statusRetriever,
+      Optional<StepPredicateFactory> optionalStepPredicate) {
     this.step = step;
     this.statusRetriever = statusRetriever;
     this.optionalStepPredicate = optionalStepPredicate;

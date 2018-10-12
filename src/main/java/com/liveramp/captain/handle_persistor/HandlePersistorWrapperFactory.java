@@ -1,6 +1,7 @@
 package com.liveramp.captain.handle_persistor;
 
-public class HandlePersistorWrapperFactory<ServiceHandle> implements HandlePersistorFactory<ServiceHandle> {
+public class HandlePersistorWrapperFactory<ServiceHandle>
+    implements HandlePersistorFactory<ServiceHandle> {
 
   private HandlePersistor<ServiceHandle> handlePersistor;
 

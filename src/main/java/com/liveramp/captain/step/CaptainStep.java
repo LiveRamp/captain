@@ -29,7 +29,7 @@ public class CaptainStep {
       return false;
     }
 
-    return step.equals(((CaptainStep)o).get());
+    return step.equals(((CaptainStep) o).get());
   }
 
   @Override

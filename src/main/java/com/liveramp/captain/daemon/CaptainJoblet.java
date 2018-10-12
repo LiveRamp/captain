@@ -1,12 +1,5 @@
 package com.liveramp.captain.daemon;
 
-
-import java.util.Optional;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.slf4j.MDC;
-
 import com.liveramp.captain.exception.CaptainPersistorException;
 import com.liveramp.captain.lib.CaptainAlertHelpers;
 import com.liveramp.captain.manifest.Manifest;
@@ -22,6 +15,10 @@ import com.liveramp.captain.waypoint.WaypointSubmitter;
 import com.liveramp.captain.waypoint.WaypointType;
 import com.liveramp.daemon_lib.Joblet;
 import com.liveramp.daemon_lib.utils.DaemonException;
+import java.util.Optional;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.slf4j.MDC;
 
 public class CaptainJoblet implements Joblet {
   private CaptainNotifier notifier;
@@ -60,19 +57,26 @@ public class CaptainJoblet implements Joblet {
       boolean supportsPending,
       boolean rammingSpeed,
       FailedRequestPolicy failedRequestPolicy) {
-    return new CaptainJoblet(config, notifier, requestUpdater, manifestManager, supportsPending, rammingSpeed, failedRequestPolicy);
+    return new CaptainJoblet(
+        config,
+        notifier,
+        requestUpdater,
+        manifestManager,
+        supportsPending,
+        rammingSpeed,
+        failedRequestPolicy);
   }
 
   private Manifest getAccountManifest() {
     ManifestFactory manifestFactory = manifestManager.getManifestFactory(config.getAppType());
     if (null == manifestFactory) {
       throw new RuntimeException(
-          String.format("could not find a manifest (host: %s) for given request type: %s. the manifests are available " +
-                  "for the following request types: %s",
+          String.format(
+              "could not find a manifest (host: %s) for given request type: %s. the manifests are available "
+                  + "for the following request types: %s",
               CaptainAlertHelpers.getHostName(),
-              config.getAppType(), manifestManager.getAvailableCaptainAppTypes()
-          )
-      );
+              config.getAppType(),
+              manifestManager.getAvailableCaptainAppTypes()));
     }
     return manifestFactory.create();
   }
@@ -98,7 +102,9 @@ public class CaptainJoblet implements Joblet {
           executeFailedRequestPolicy(config);
           break;
         default:
-          throw new DaemonException("Provided config has a job status that shouldn't be handled by the captain " + config);
+          throw new DaemonException(
+              "Provided config has a job status that shouldn't be handled by the captain "
+                  + config);
       }
     } catch (Exception e) {
       notifier.notify(
@@ -115,7 +121,8 @@ public class CaptainJoblet implements Joblet {
 
   private void executeFailedRequestPolicy(CaptainRequestConfig config) {
     long jobId = config.getId();
-    FailedRequestPolicy.FailedRequestAction failedRequestAction = failedRequestPolicy.getFailedRequestAction(jobId);
+    FailedRequestPolicy.FailedRequestAction failedRequestAction =
+        failedRequestPolicy.getFailedRequestAction(jobId);
     switch (failedRequestAction) {
       case RETRY:
         requestUpdater.retry(jobId);
@@ -135,29 +142,49 @@ public class CaptainJoblet implements Joblet {
       Manifest manifest = getAccountManifest();
 
       long jobId = config.getId();
-      Optional<CaptainStep> nextStepOptional = manifest.getNextStep(config.getStep(), config.getId());
+      Optional<CaptainStep> nextStepOptional =
+          manifest.getNextStep(config.getStep(), config.getId());
 
-      LOG.info(String.format("current step: %s, current status: %s, next step: %s, next status: %s", config.getStep(), config.getStatus(), nextStepOptional, CaptainStatus.READY));
+      LOG.info(
+          String.format(
+              "current step: %s, current status: %s, next step: %s, next status: %s",
+              config.getStep(), config.getStatus(), nextStepOptional, CaptainStatus.READY));
       if (nextStepOptional.isPresent()) {
-        requestUpdater.setStepAndStatus(jobId, config.getStep(), config.getStatus(), nextStepOptional.get(), CaptainStatus.READY);
+        requestUpdater.setStepAndStatus(
+            jobId,
+            config.getStep(),
+            config.getStatus(),
+            nextStepOptional.get(),
+            CaptainStatus.READY);
 
         if (rammingSpeed) {
-          SimpleCaptainConfig newConfig = new SimpleCaptainConfig(
-              config.getId(),
-              CaptainStatus.READY,
-              nextStepOptional.get(),
-              config.getAppType()
-          );
-          CaptainJoblet.of(newConfig, notifier, requestUpdater, manifestManager, supportsPending, rammingSpeed, failedRequestPolicy).run();
+          SimpleCaptainConfig newConfig =
+              new SimpleCaptainConfig(
+                  config.getId(), CaptainStatus.READY, nextStepOptional.get(), config.getAppType());
+          CaptainJoblet.of(
+                  newConfig,
+                  notifier,
+                  requestUpdater,
+                  manifestManager,
+                  supportsPending,
+                  rammingSpeed,
+                  failedRequestPolicy)
+              .run();
         }
 
       } else {
-        requestUpdater.setStepAndStatus(jobId, config.getStep(), config.getStatus(), CaptainStep.fromString("DONE"), CaptainStatus.COMPLETED);
+        requestUpdater.setStepAndStatus(
+            jobId,
+            config.getStep(),
+            config.getStatus(),
+            CaptainStep.fromString("DONE"),
+            CaptainStatus.COMPLETED);
       }
     } catch (Exception e) {
-      String subject = String.format("%s: error while transitioning steps for request %s from step: %s.",
-          CaptainAlertHelpers.getHostName(), config.getId(), config.getStep()
-      );
+      String subject =
+          String.format(
+              "%s: error while transitioning steps for request %s from step: %s.",
+              CaptainAlertHelpers.getHostName(), config.getId(), config.getStep());
 
       notifier.notify(subject, e, CaptainNotifier.NotificationLevel.ERROR);
       requestUpdater.fail(config.getId());
@@ -175,16 +202,22 @@ public class CaptainJoblet implements Joblet {
 
     try {
       WaypointSubmitter waypointSubmitter = waypoint.getSubmitter();
-      RequestContext requestOptions = manifest.getRequestContextProducerFactory().create().get(jobId);
+      RequestContext requestOptions =
+          manifest.getRequestContextProducerFactory().create().get(jobId);
       waypointSubmitter.submitServiceRequest(config.getId(), requestOptions);
 
     } catch (CaptainPersistorException e) {
-      String subject = String.format("%s: handle persistence failed for request %s", CaptainAlertHelpers.getHostName(), jobId);
+      String subject =
+          String.format(
+              "%s: handle persistence failed for request %s",
+              CaptainAlertHelpers.getHostName(), jobId);
       notifier.notify(subject, e, CaptainNotifier.NotificationLevel.ERROR);
       requestUpdater.cancel(jobId);
       return;
     } catch (Throwable e) {
-      String subject = String.format("%s: error while submitting request %s", CaptainAlertHelpers.getHostName(), jobId);
+      String subject =
+          String.format(
+              "%s: error while submitting request %s", CaptainAlertHelpers.getHostName(), jobId);
       notifier.notify(subject, e, CaptainNotifier.NotificationLevel.ERROR);
       requestUpdater.fail(jobId);
       return;
@@ -202,17 +235,25 @@ public class CaptainJoblet implements Joblet {
       targetStatus = CaptainStatus.COMPLETED;
     }
 
-    LOG.info(String.format("current step %s, current status: %s, next status: %s", config.getStep(), config.getStatus(), targetStatus));
+    LOG.info(
+        String.format(
+            "current step %s, current status: %s, next status: %s",
+            config.getStep(), config.getStatus(), targetStatus));
     requestUpdater.setStatus(jobId, config.getStep(), config.getStatus(), targetStatus);
 
     if (rammingSpeed) {
-      SimpleCaptainConfig newConfig = new SimpleCaptainConfig(
-          config.getId(),
-          targetStatus,
-          config.getStep(),
-          config.getAppType());
-      CaptainJoblet.of(newConfig, notifier, requestUpdater, manifestManager, supportsPending, rammingSpeed, failedRequestPolicy).run();
-
+      SimpleCaptainConfig newConfig =
+          new SimpleCaptainConfig(
+              config.getId(), targetStatus, config.getStep(), config.getAppType());
+      CaptainJoblet.of(
+              newConfig,
+              notifier,
+              requestUpdater,
+              manifestManager,
+              supportsPending,
+              rammingSpeed,
+              failedRequestPolicy)
+          .run();
     }
   }
 
@@ -222,11 +263,13 @@ public class CaptainJoblet implements Joblet {
       Waypoint waypoint = manifest.getWaypointForStep(config.getStep());
       long jobId = config.getId();
 
-      CaptainStatus status = waypoint.getStatusRetrieverFactory().create().getStatus(config.getId());
+      CaptainStatus status =
+          waypoint.getStatusRetrieverFactory().create().getStatus(config.getId());
 
       CaptainStatus targetStatus;
-      if (status.equals(CaptainStatus.IN_PROGRESS) || status.equals(CaptainStatus.FAILED) || status.equals(
-          CaptainStatus.COMPLETED)) {
+      if (status.equals(CaptainStatus.IN_PROGRESS)
+          || status.equals(CaptainStatus.FAILED)
+          || status.equals(CaptainStatus.COMPLETED)) {
         targetStatus = CaptainStatus.IN_PROGRESS;
       } else if (status.equals(CaptainStatus.QUARANTINED)) {
         targetStatus = CaptainStatus.QUARANTINED;
@@ -238,17 +281,20 @@ public class CaptainJoblet implements Joblet {
         targetStatus = config.getStatus();
       }
 
-      LOG.info(String.format("current step %s, current status: %s, next status: %s", config.getStep(), config.getStatus(), targetStatus));
+      LOG.info(
+          String.format(
+              "current step %s, current status: %s, next status: %s",
+              config.getStep(), config.getStatus(), targetStatus));
       requestUpdater.setStatus(jobId, config.getStep(), config.getStatus(), targetStatus);
     } catch (Exception e) {
-      String subject = String.format("%s: error while checking if service has begun processing req %s in step: %s",
-          config.getId(), CaptainAlertHelpers.getHostName(), config.getStep()
-      );
+      String subject =
+          String.format(
+              "%s: error while checking if service has begun processing req %s in step: %s",
+              config.getId(), CaptainAlertHelpers.getHostName(), config.getStep());
 
       notifier.notify(subject, e, CaptainNotifier.NotificationLevel.ERROR);
       requestUpdater.fail(config.getId());
     }
-
   }
 
   private void checkRequestComplete(CaptainRequestConfig config) {
@@ -257,7 +303,8 @@ public class CaptainJoblet implements Joblet {
       Waypoint waypoint = manifest.getWaypointForStep(config.getStep());
       long jobId = config.getId();
 
-      CaptainStatus status = waypoint.getStatusRetrieverFactory().create().getStatus(config.getId());
+      CaptainStatus status =
+          waypoint.getStatusRetrieverFactory().create().getStatus(config.getId());
 
       CaptainStatus targetStatus;
       if (status.equals(CaptainStatus.COMPLETED)) {
@@ -274,27 +321,41 @@ public class CaptainJoblet implements Joblet {
       } else if (status.equals(CaptainStatus.CANCELLED)) {
         requestUpdater.cancel(jobId);
         return;
-      } else { // i.e. status.equals(ServiceRequestStatus.PENDING) || status.equals(ServiceRequestStatus.IN_PROGRESS)
-        throw new RuntimeException(String.format("request %s in an unexpected state. in the status_retriever step it was in status %s", jobId, status));
+      } else { // i.e. status.equals(ServiceRequestStatus.PENDING) ||
+               // status.equals(ServiceRequestStatus.IN_PROGRESS)
+        throw new RuntimeException(
+            String.format(
+                "request %s in an unexpected state. in the status_retriever step it was in status %s",
+                jobId, status));
       }
 
-      LOG.info(String.format("current step %s, current status: %s, next status: %s", config.getStep(), config.getStatus(), targetStatus));
+      LOG.info(
+          String.format(
+              "current step %s, current status: %s, next status: %s",
+              config.getStep(), config.getStatus(), targetStatus));
       requestUpdater.setStatus(jobId, config.getStep(), config.getStatus(), targetStatus);
 
       if (rammingSpeed && targetStatus.equals(CaptainStatus.COMPLETED)) {
-        SimpleCaptainConfig newConfig = new SimpleCaptainConfig(
-            config.getId(),
-            CaptainStatus.COMPLETED,
-            config.getStep(),
-            config.getAppType());
+        SimpleCaptainConfig newConfig =
+            new SimpleCaptainConfig(
+                config.getId(), CaptainStatus.COMPLETED, config.getStep(), config.getAppType());
 
-        CaptainJoblet.of(newConfig, notifier, requestUpdater, manifestManager, supportsPending, rammingSpeed, failedRequestPolicy).run();
+        CaptainJoblet.of(
+                newConfig,
+                notifier,
+                requestUpdater,
+                manifestManager,
+                supportsPending,
+                rammingSpeed,
+                failedRequestPolicy)
+            .run();
       }
 
     } catch (Exception e) {
-      String subject = String.format("%s: error while checking status of req %s in step: %s",
-          CaptainAlertHelpers.getHostName(), config.getId(), config.getStep()
-      );
+      String subject =
+          String.format(
+              "%s: error while checking status of req %s in step: %s",
+              CaptainAlertHelpers.getHostName(), config.getId(), config.getStep());
 
       notifier.notify(subject, e, CaptainNotifier.NotificationLevel.ERROR);
       requestUpdater.fail(config.getId());

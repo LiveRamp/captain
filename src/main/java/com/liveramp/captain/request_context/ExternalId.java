@@ -1,15 +1,18 @@
 package com.liveramp.captain.request_context;
 
-/***
- *  The ExternalId exists to help clients associate their requests with each other, and outside objects.
+/**
+ * * The ExternalId exists to help clients associate their requests with each other, and outside
+ * objects.
  */
 public class ExternalId {
   private String idType;
   private String id;
 
-  /***
+  /**
+   * *
+   *
    * @param idType An identifier for the external id. (e.g. "data_sync_job")
-   * @param id  An identifier for an instance from the external application. (e.g. id of DataSyncJob)
+   * @param id An identifier for an instance from the external application. (e.g. id of DataSyncJob)
    */
   public ExternalId(String idType, String id) {
     this.idType = idType;

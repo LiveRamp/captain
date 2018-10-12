@@ -1,13 +1,11 @@
 package com.liveramp.captain.manifest_manager;
 
-import java.util.Set;
-
 import com.google.common.collect.Sets;
-
 import com.liveramp.captain.app_type.CaptainAppType;
 import com.liveramp.captain.manifest.Manifest;
 import com.liveramp.captain.manifest.ManifestFactory;
 import com.liveramp.captain.manifest.WrapperManifestFactoryImpl;
+import java.util.Set;
 
 public class SingleAppManifestManager implements ManifestManager {
   private final String SINGLE_APP_TYPE_PLACEHOLDER_KEY = "ALL";
@@ -20,7 +18,6 @@ public class SingleAppManifestManager implements ManifestManager {
   SingleAppManifestManager(ManifestFactory manifestFactory) {
     this.manifestFactory = manifestFactory;
   }
-
 
   @Override
   public ManifestFactory getManifestFactory(CaptainAppType appType) {

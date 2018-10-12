@@ -1,8 +1,6 @@
 package com.liveramp.captain.request_submitter;
 
-
 import com.liveramp.captain.request_context.RequestContext;
-
 
 public class NoOpSubmitter implements RequestSubmitter<Long> {
   @Override

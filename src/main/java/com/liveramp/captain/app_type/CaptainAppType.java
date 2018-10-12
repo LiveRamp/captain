@@ -29,7 +29,7 @@ public class CaptainAppType {
       return false;
     }
 
-    return appType.equals(((CaptainAppType)o).get());
+    return appType.equals(((CaptainAppType) o).get());
   }
 
   @Override

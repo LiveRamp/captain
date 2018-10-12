@@ -1,8 +1,7 @@
 package com.liveramp.captain.request_lock.running_ids_manager_request_lock;
 
-import java.util.Set;
-
 import com.google.common.collect.Sets;
+import java.util.Set;
 
 class RunningIdsManager {
 
@@ -24,4 +23,3 @@ class RunningIdsManager {
     return Sets.newHashSet(runningIds);
   }
 }
-

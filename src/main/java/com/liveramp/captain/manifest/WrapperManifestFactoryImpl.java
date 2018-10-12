@@ -1,6 +1,6 @@
 package com.liveramp.captain.manifest;
 
-public class WrapperManifestFactoryImpl implements ManifestFactory{
+public class WrapperManifestFactoryImpl implements ManifestFactory {
   private final Manifest manifest;
 
   public WrapperManifestFactoryImpl(Manifest manifest) {

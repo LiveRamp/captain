@@ -11,7 +11,6 @@ import com.liveramp.captain.request_submitter.RequestSubmitterFactory;
 import com.liveramp.captain.request_submitter.RequestSubmitterWrapperFactory;
 import com.liveramp.captain.status_retriever.StatusRetrieverFactory;
 import com.liveramp.captain.step.CaptainStep;
-
 import java.util.Optional;
 
 public class SyncWaypoint<ServiceHandle> implements Waypoint {
@@ -33,14 +32,28 @@ public class SyncWaypoint<ServiceHandle> implements Waypoint {
     this(step, new RequestSubmitterWrapperFactory<>(requestSubmitter), null, Optional.empty());
   }
 
-  public SyncWaypoint(CaptainStep step, RequestSubmitter<ServiceHandle> requestSubmitter, HandlePersistor<ServiceHandle> handlePersistor) {
-    this(step, new RequestSubmitterWrapperFactory<>(requestSubmitter), new HandlePersistorWrapperFactory<>(handlePersistor), Optional.empty());
+  public SyncWaypoint(
+      CaptainStep step,
+      RequestSubmitter<ServiceHandle> requestSubmitter,
+      HandlePersistor<ServiceHandle> handlePersistor) {
+    this(
+        step,
+        new RequestSubmitterWrapperFactory<>(requestSubmitter),
+        new HandlePersistorWrapperFactory<>(handlePersistor),
+        Optional.empty());
   }
 
-  public SyncWaypoint(CaptainStep step, RequestSubmitter<ServiceHandle> requestSubmitter, HandlePersistor<ServiceHandle> handlePersistor, StepPredicate stepPredicate) {
-    this(step, new RequestSubmitterWrapperFactory<>(requestSubmitter), new HandlePersistorWrapperFactory<>(handlePersistor), Optional.of(new StepPredicateWrapperFactory(stepPredicate)));
+  public SyncWaypoint(
+      CaptainStep step,
+      RequestSubmitter<ServiceHandle> requestSubmitter,
+      HandlePersistor<ServiceHandle> handlePersistor,
+      StepPredicate stepPredicate) {
+    this(
+        step,
+        new RequestSubmitterWrapperFactory<>(requestSubmitter),
+        new HandlePersistorWrapperFactory<>(handlePersistor),
+        Optional.of(new StepPredicateWrapperFactory(stepPredicate)));
   }
-
 
   @Override
   public CaptainStep getStep() {
