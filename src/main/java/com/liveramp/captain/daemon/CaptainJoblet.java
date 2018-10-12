@@ -14,6 +14,7 @@ import com.liveramp.captain.manifest.ManifestFactory;
 import com.liveramp.captain.manifest_manager.ManifestManager;
 import com.liveramp.captain.notifier.CaptainNotifier;
 import com.liveramp.captain.request_context.RequestContext;
+import com.liveramp.captain.retry.FailedRequestPolicy;
 import com.liveramp.captain.status.CaptainStatus;
 import com.liveramp.captain.step.CaptainStep;
 import com.liveramp.captain.waypoint.Waypoint;
@@ -27,6 +28,7 @@ public class CaptainJoblet implements Joblet {
   private Logger LOG = LoggerFactory.getLogger(CaptainJoblet.class);
   private boolean supportsPending;
   private boolean rammingSpeed;
+  private FailedRequestPolicy failedRequestPolicy;
   private CaptainRequestConfig config;
   private RequestUpdater requestUpdater;
   private ManifestManager manifestManager;
@@ -37,13 +39,15 @@ public class CaptainJoblet implements Joblet {
       RequestUpdater requestUpdater,
       ManifestManager manifestManager,
       boolean supportsPending,
-      boolean rammingSpeed) {
+      boolean rammingSpeed,
+      FailedRequestPolicy failedRequestPolicy) {
     this.notifier = notifier;
     this.config = config;
     this.requestUpdater = requestUpdater;
     this.manifestManager = manifestManager;
     this.supportsPending = supportsPending;
     this.rammingSpeed = rammingSpeed;
+    this.failedRequestPolicy = failedRequestPolicy;
 
     LOG.info("captain config: " + config);
   }
@@ -54,8 +58,9 @@ public class CaptainJoblet implements Joblet {
       RequestUpdater requestUpdater,
       ManifestManager manifestManager,
       boolean supportsPending,
-      boolean rammingSpeed) {
-    return new CaptainJoblet(config, notifier, requestUpdater, manifestManager, supportsPending, rammingSpeed);
+      boolean rammingSpeed,
+      FailedRequestPolicy failedRequestPolicy) {
+    return new CaptainJoblet(config, notifier, requestUpdater, manifestManager, supportsPending, rammingSpeed, failedRequestPolicy);
   }
 
   private Manifest getAccountManifest() {
@@ -89,6 +94,9 @@ public class CaptainJoblet implements Joblet {
         case IN_PROGRESS:
           checkRequestComplete(config);
           break;
+        case FAILED:
+          executeFailedRequestPolicy(config);
+          break;
         default:
           throw new DaemonException("Provided config has a job status that shouldn't be handled by the captain " + config);
       }
@@ -102,6 +110,23 @@ public class CaptainJoblet implements Joblet {
       throw e;
     } finally {
       MDC.remove("jobId");
+    }
+  }
+
+  private void executeFailedRequestPolicy(CaptainRequestConfig config) {
+    long jobId = config.getId();
+    FailedRequestPolicy.FailedRequestAction failedRequestAction = failedRequestPolicy.getFailedRequestAction(jobId);
+    switch (failedRequestAction) {
+      case RETRY:
+        requestUpdater.retry(jobId);
+        break;
+      case QUARANTINE:
+        requestUpdater.quarantine(jobId);
+        break;
+      case NO_OP:
+        break;
+      default:
+        throw new RuntimeException("Unknown enum value: " + failedRequestAction);
     }
   }
 
@@ -123,7 +148,7 @@ public class CaptainJoblet implements Joblet {
               nextStepOptional.get(),
               config.getAppType()
           );
-          CaptainJoblet.of(newConfig, notifier, requestUpdater, manifestManager, supportsPending, rammingSpeed).run();
+          CaptainJoblet.of(newConfig, notifier, requestUpdater, manifestManager, supportsPending, rammingSpeed, failedRequestPolicy).run();
         }
 
       } else {
@@ -186,7 +211,7 @@ public class CaptainJoblet implements Joblet {
           targetStatus,
           config.getStep(),
           config.getAppType());
-      CaptainJoblet.of(newConfig, notifier, requestUpdater, manifestManager, supportsPending, rammingSpeed).run();
+      CaptainJoblet.of(newConfig, notifier, requestUpdater, manifestManager, supportsPending, rammingSpeed, failedRequestPolicy).run();
 
     }
   }
@@ -263,7 +288,7 @@ public class CaptainJoblet implements Joblet {
             config.getStep(),
             config.getAppType());
 
-        CaptainJoblet.of(newConfig, notifier, requestUpdater, manifestManager, supportsPending, rammingSpeed).run();
+        CaptainJoblet.of(newConfig, notifier, requestUpdater, manifestManager, supportsPending, rammingSpeed, failedRequestPolicy).run();
       }
 
     } catch (Exception e) {
