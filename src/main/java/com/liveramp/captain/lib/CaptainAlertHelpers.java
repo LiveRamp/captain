@@ -1,7 +1,6 @@
 package com.liveramp.captain.lib;
 
 import java.net.InetAddress;
-
 import org.apache.commons.io.IOUtils;
 
 public class CaptainAlertHelpers {

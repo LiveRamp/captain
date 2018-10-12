@@ -1,11 +1,9 @@
 package com.liveramp.captain.request_lock.zk_request_lock;
 
+import com.liveramp.captain.request_lock.CaptainRequestLockWithRunningIds;
 import java.util.Set;
 import java.util.stream.Collectors;
-
 import org.apache.curator.framework.CuratorFramework;
-
-import com.liveramp.captain.request_lock.CaptainRequestLockWithRunningIds;
 
 public class ZkCaptainRequestLock implements CaptainRequestLockWithRunningIds {
   private ZKRequestLock requestLock;
@@ -40,7 +38,8 @@ public class ZkCaptainRequestLock implements CaptainRequestLockWithRunningIds {
     }
   }
 
-  public static ZkCaptainRequestLock getProduction(CuratorFramework curatorFramework, String zkRootPath) {
+  public static ZkCaptainRequestLock getProduction(
+      CuratorFramework curatorFramework, String zkRootPath) {
     return new ZkCaptainRequestLock(new ZKRequestLock(curatorFramework, zkRootPath));
   }
 }

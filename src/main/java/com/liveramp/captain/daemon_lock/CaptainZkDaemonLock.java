@@ -1,11 +1,10 @@
 package com.liveramp.captain.daemon;
 
+import com.liveramp.daemon_lib.DaemonLock;
+import com.liveramp.daemon_lib.utils.DaemonException;
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.recipes.locks.InterProcessLock;
 import org.apache.curator.framework.recipes.locks.InterProcessMutex;
-
-import com.liveramp.daemon_lib.DaemonLock;
-import com.liveramp.daemon_lib.utils.DaemonException;
 
 public class CaptainZkDaemonLock implements DaemonLock {
 
@@ -14,7 +13,8 @@ public class CaptainZkDaemonLock implements DaemonLock {
 
   public static DaemonLock getProduction(CuratorFramework curatorFramework, String daemonId) {
     curatorFramework.start();
-    Runtime.getRuntime().addShutdownHook(new Thread(new CaptainZkDaemonLock.FrameworkShutdown(curatorFramework)));
+    Runtime.getRuntime()
+        .addShutdownHook(new Thread(new CaptainZkDaemonLock.FrameworkShutdown(curatorFramework)));
 
     return new CaptainZkDaemonLock(curatorFramework, ZK_DAEMON_LOCK_BASE_PATH + daemonId);
   }
@@ -57,5 +57,4 @@ public class CaptainZkDaemonLock implements DaemonLock {
       fw.close();
     }
   }
-
 }

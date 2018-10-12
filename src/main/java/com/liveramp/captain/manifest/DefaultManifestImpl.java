@@ -1,16 +1,14 @@
 package com.liveramp.captain.manifest;
 
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.stream.Collectors;
-
 import com.google.common.collect.Maps;
-
 import com.liveramp.captain.request_context.NoOpRequestContextProducer;
 import com.liveramp.captain.request_context.RequestContextProducerFactory;
 import com.liveramp.captain.step.CaptainStep;
 import com.liveramp.captain.waypoint.Waypoint;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.stream.Collectors;
 
 public class DefaultManifestImpl implements Manifest {
   private List<Waypoint> steps;
@@ -19,7 +17,8 @@ public class DefaultManifestImpl implements Manifest {
   private Map<String, Waypoint> waypointByStep;
   private RequestContextProducerFactory requestContextProducerFactory;
 
-  public DefaultManifestImpl(List<Waypoint> steps, RequestContextProducerFactory requestContextProducerFactory) {
+  public DefaultManifestImpl(
+      List<Waypoint> steps, RequestContextProducerFactory requestContextProducerFactory) {
     this.steps = steps;
     this.requestContextProducerFactory = requestContextProducerFactory;
 
@@ -49,7 +48,9 @@ public class DefaultManifestImpl implements Manifest {
     } else {
       Integer stepIndex = indexByStep.get(step);
       if (null == stepIndex) {
-        throw new RuntimeException(String.format("could not find step: %s in manifest: %s", step, waypointByStep.keySet()));
+        throw new RuntimeException(
+            String.format(
+                "could not find step: %s in manifest: %s", step, waypointByStep.keySet()));
       }
       nextStepIndex = indexByStep.get(step) + 1;
     }

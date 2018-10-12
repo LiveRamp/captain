@@ -1,6 +1,7 @@
 package com.liveramp.captain.request_submitter;
 
-public class RequestSubmitterWrapperFactory<RequestHandle> implements RequestSubmitterFactory<RequestHandle> {
+public class RequestSubmitterWrapperFactory<RequestHandle>
+    implements RequestSubmitterFactory<RequestHandle> {
 
   private RequestSubmitter<RequestHandle> requestSubmitter;
 

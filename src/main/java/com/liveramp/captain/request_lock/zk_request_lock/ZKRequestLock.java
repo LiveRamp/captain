@@ -1,12 +1,11 @@
 package com.liveramp.captain.request_lock.zk_request_lock;
 
 import com.google.common.collect.Sets;
+import java.util.Set;
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.zookeeper.CreateMode;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.util.Set;
 
 class ZKRequestLock {
   private static final Logger LOG = LoggerFactory.getLogger(ZKRequestLock.class);
@@ -30,9 +29,14 @@ class ZKRequestLock {
       String requestPath = zkRootPath + "/" + requestId;
 
       if (framework.checkExists().forPath(requestPath) != null) {
-        throw new RuntimeException(String.format("request: %s already locked by another process.", requestId));
+        throw new RuntimeException(
+            String.format("request: %s already locked by another process.", requestId));
       }
-      framework.create().creatingParentsIfNeeded().withMode(CreateMode.EPHEMERAL).forPath(requestPath);
+      framework
+          .create()
+          .creatingParentsIfNeeded()
+          .withMode(CreateMode.EPHEMERAL)
+          .forPath(requestPath);
 
       locks.add(requestId);
     }
@@ -43,7 +47,9 @@ class ZKRequestLock {
       framework.delete().deletingChildrenIfNeeded().forPath(zkRootPath + "/" + requestId);
       locks.remove(requestId);
     } else {
-      throw new RuntimeException(String.format("trying to unlock a lock owned by another process. request id: %s", requestId));
+      throw new RuntimeException(
+          String.format(
+              "trying to unlock a lock owned by another process. request id: %s", requestId));
     }
   }
 
@@ -51,7 +57,9 @@ class ZKRequestLock {
     try {
       release(requestId);
     } catch (Exception e) {
-      LOG.error("caught exception during safe release of lock. logging exception and continuing execution.", e);
+      LOG.error(
+          "caught exception during safe release of lock. logging exception and continuing execution.",
+          e);
     }
   }
 

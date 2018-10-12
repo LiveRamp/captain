@@ -1,6 +1,5 @@
 package com.liveramp.captain.request_context;
 
-
 public class NoOpRequestContextProducer implements RequestContextProducer {
   @Override
   public EmptyRequestContext get(long jobId) {

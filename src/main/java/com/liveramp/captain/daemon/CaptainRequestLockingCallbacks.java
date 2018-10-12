@@ -29,5 +29,4 @@ public class CaptainRequestLockingCallbacks {
       captainRequestLock.unlock(config.getId());
     }
   }
-
 }
