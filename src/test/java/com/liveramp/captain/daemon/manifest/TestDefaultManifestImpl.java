@@ -74,7 +74,7 @@ public class TestDefaultManifestImpl {
         optionalWaypoint1,
         nonOptionalWaypoint1
     ));
-    checkExpectedNextStep(testManifest, CaptainStep.fromString("INITIALIZING"), nonOptionalWaypoint1.getStep());
+    checkExpectedNextStep(testManifest, CaptainStep.INITIALIZING, nonOptionalWaypoint1.getStep());
   }
 
   @Test

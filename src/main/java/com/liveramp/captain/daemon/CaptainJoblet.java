@@ -152,7 +152,7 @@ public class CaptainJoblet implements Joblet {
         }
 
       } else {
-        requestUpdater.setStepAndStatus(jobId, config.getStep(), config.getStatus(), CaptainStep.fromString("DONE"), CaptainStatus.COMPLETED);
+        requestUpdater.setStepAndStatus(jobId, config.getStep(), config.getStatus(), CaptainStep.DONE, CaptainStatus.COMPLETED);
       }
     } catch (Exception e) {
       String subject = String.format("%s: error while transitioning steps for request %s from step: %s.",
