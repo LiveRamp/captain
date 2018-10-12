@@ -9,6 +9,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
+import org.mockito.verification.VerificationMode;
 
 import com.liveramp.captain.app_type.CaptainAppType;
 import com.liveramp.captain.handle_persistor.HandlePersistor;
@@ -20,6 +21,8 @@ import com.liveramp.captain.manifest_manager.MultiAppManifestManager;
 import com.liveramp.captain.notifier.CaptainNotifier;
 import com.liveramp.captain.request_context.RequestContext;
 import com.liveramp.captain.request_submitter.RequestSubmitter;
+import com.liveramp.captain.retry.DefaultFailedRequestPolicy;
+import com.liveramp.captain.retry.FailedRequestPolicy;
 import com.liveramp.captain.status.CaptainStatus;
 import com.liveramp.captain.status_retriever.StatusRetriever;
 import com.liveramp.captain.step.CaptainStep;
@@ -31,6 +34,7 @@ import com.liveramp.captain.waypoint.SyncWaypoint;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.eq;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -88,6 +92,11 @@ public class TestCaptainJoblet {
   private final CaptainAppType APP_TYPE_1 = CaptainAppType.fromString("APP_TYPE_1");
   private final CaptainAppType APP_TYPE_2 = CaptainAppType.fromString("APP_TYPE_2");
 
+  private final FailedRequestPolicy FAILED_REQUEST_POLICY = new DefaultFailedRequestPolicy();
+
+  @Mock
+  private FailedRequestPolicy failedRequestPolicyMock;
+
   @Before
   public void setup() {
 
@@ -119,7 +128,7 @@ public class TestCaptainJoblet {
 
     final CaptainRequestConfig config = new SimpleCaptainConfig(JOB_ID, CaptainStatus.COMPLETED, CAPTAIN_STEP1, APP_TYPE_1);
 
-    new CaptainJoblet(config, notifier, requestUpdater, manifestManager, true, false).run();
+    new CaptainJoblet(config, notifier, requestUpdater, manifestManager, true, false, FAILED_REQUEST_POLICY).run();
 
     verify(requestUpdater, times(1)).setStepAndStatus(config.getId(), CAPTAIN_STEP1, CaptainStatus.COMPLETED, CAPTAIN_STEP2_A, CaptainStatus.READY);
   }
@@ -128,7 +137,7 @@ public class TestCaptainJoblet {
   public void testGoToNextStepInitializing() throws Exception {
     final CaptainRequestConfig config = new SimpleCaptainConfig(JOB_ID, CaptainStatus.COMPLETED, INITIALIZING, APP_TYPE_1);
 
-    new CaptainJoblet(config, notifier, requestUpdater, manifestManager, true, false).run();
+    new CaptainJoblet(config, notifier, requestUpdater, manifestManager, true, false, FAILED_REQUEST_POLICY).run();
 
     verify(requestUpdater, times(1)).setStepAndStatus(config.getId(), INITIALIZING, CaptainStatus.COMPLETED, CAPTAIN_STEP1, CaptainStatus.READY);
   }
@@ -137,7 +146,7 @@ public class TestCaptainJoblet {
   public void testGoToNextStepLastStep() throws Exception {
     CaptainRequestConfig config = new SimpleCaptainConfig(JOB_ID, CaptainStatus.COMPLETED, CAPTAIN_STEP6, APP_TYPE_1);
 
-    new CaptainJoblet(config, notifier, requestUpdater, manifestManager, true, false).run();
+    new CaptainJoblet(config, notifier, requestUpdater, manifestManager, true, false, FAILED_REQUEST_POLICY).run();
 
     verify(requestUpdater, times(1)).setStepAndStatus(config.getId(), CAPTAIN_STEP6, CaptainStatus.COMPLETED, DONE, CaptainStatus.COMPLETED);
   }
@@ -148,7 +157,7 @@ public class TestCaptainJoblet {
 
     when(requestSubmitterStep2.submit(eq(JOB_ID), any(RequestContext.class))).thenReturn(SERVICE_HANDLE);
 
-    new CaptainJoblet(config, notifier, requestUpdater, manifestManager, true, false).run();
+    new CaptainJoblet(config, notifier, requestUpdater, manifestManager, true, false, FAILED_REQUEST_POLICY).run();
 
     verify(requestSubmitterStep2, times(1)).submit(eq(JOB_ID), any(RequestContext.class));
     verify(handlePersistor2, times(1)).persist(JOB_ID, SERVICE_HANDLE);
@@ -161,7 +170,7 @@ public class TestCaptainJoblet {
 
     when(requestSubmitterStep2.submit(eq(JOB_ID), any(RequestContext.class))).thenReturn(SERVICE_HANDLE);
 
-    new CaptainJoblet(config, notifier, requestUpdater, manifestManager, false, false).run();
+    new CaptainJoblet(config, notifier, requestUpdater, manifestManager, false, false, FAILED_REQUEST_POLICY).run();
 
     verify(requestSubmitterStep2, times(1)).submit(eq(JOB_ID), any(RequestContext.class));
     verify(handlePersistor2, times(1)).persist(JOB_ID, SERVICE_HANDLE);
@@ -172,7 +181,7 @@ public class TestCaptainJoblet {
   public void testSubmitRequestSync() throws Exception {
     CaptainRequestConfig config = new SimpleCaptainConfig(JOB_ID, CaptainStatus.READY, CAPTAIN_STEP1, APP_TYPE_1);
 
-    new CaptainJoblet(config, notifier, requestUpdater, manifestManager, true, false).run();
+    new CaptainJoblet(config, notifier, requestUpdater, manifestManager, true, false, FAILED_REQUEST_POLICY).run();
 
     verify(requestSubmitterStep1, times(1)).submit(eq(JOB_ID), any(RequestContext.class));
     verify(requestUpdater, times(1)).setStatus(config.getId(), CAPTAIN_STEP1, CaptainStatus.READY, CaptainStatus.COMPLETED);
@@ -184,7 +193,7 @@ public class TestCaptainJoblet {
 
     when(requestSubmitterStep2.submit(eq(JOB_ID), any(RequestContext.class))).thenReturn(SERVICE_HANDLE);
 
-    new CaptainJoblet(config, notifier, requestUpdater, manifestManager, true, false).run();
+    new CaptainJoblet(config, notifier, requestUpdater, manifestManager, true, false, FAILED_REQUEST_POLICY).run();
 
     verify(requestSubmitterStep2, times(1)).submit(eq(JOB_ID), any(RequestContext.class));
     verify(handlePersistor2, times(1)).persist(JOB_ID, SERVICE_HANDLE);
@@ -195,7 +204,7 @@ public class TestCaptainJoblet {
   public void testSubmitRequestFlowControl1() throws Exception {
     CaptainRequestConfig config = new SimpleCaptainConfig(JOB_ID, CaptainStatus.READY, CAPTAIN_STEP3, APP_TYPE_1);
 
-    new CaptainJoblet(config, notifier, requestUpdater, manifestManager, true, false).run();
+    new CaptainJoblet(config, notifier, requestUpdater, manifestManager, true, false, FAILED_REQUEST_POLICY).run();
 
     verify(requestUpdater, times(1)).setStatus(config.getId(), CAPTAIN_STEP3, CaptainStatus.READY, CaptainStatus.PENDING);
   }
@@ -205,13 +214,13 @@ public class TestCaptainJoblet {
     CaptainRequestConfig config = new SimpleCaptainConfig(JOB_ID, CaptainStatus.PENDING, CAPTAIN_STEP2_B, APP_TYPE_1);
 
     when(statusRetrieverStep2.getStatus(JOB_ID)).thenReturn(CaptainStatus.IN_PROGRESS);
-    new CaptainJoblet(config, notifier, requestUpdater, manifestManager, true, false).run();
+    new CaptainJoblet(config, notifier, requestUpdater, manifestManager, true, false, FAILED_REQUEST_POLICY).run();
 
     when(statusRetrieverStep2.getStatus(JOB_ID)).thenReturn(CaptainStatus.COMPLETED);
-    new CaptainJoblet(config, notifier, requestUpdater, manifestManager, true, false).run();
+    new CaptainJoblet(config, notifier, requestUpdater, manifestManager, true, false, FAILED_REQUEST_POLICY).run();
 
     when(statusRetrieverStep2.getStatus(JOB_ID)).thenReturn(CaptainStatus.FAILED);
-    new CaptainJoblet(config, notifier, requestUpdater, manifestManager, true, false).run();
+    new CaptainJoblet(config, notifier, requestUpdater, manifestManager, true, false, FAILED_REQUEST_POLICY).run();
 
     verify(requestUpdater, times(3)).setStatus(config.getId(), CAPTAIN_STEP2_B, CaptainStatus.PENDING, CaptainStatus.IN_PROGRESS);
   }
@@ -221,10 +230,10 @@ public class TestCaptainJoblet {
     CaptainRequestConfig config = new SimpleCaptainConfig(JOB_ID, CaptainStatus.PENDING, CAPTAIN_STEP2_B, APP_TYPE_1);
 
     when(statusRetrieverStep2.getStatus(JOB_ID)).thenReturn(CaptainStatus.QUARANTINED);
-    new CaptainJoblet(config, notifier, requestUpdater, manifestManager, true, false).run();
+    new CaptainJoblet(config, notifier, requestUpdater, manifestManager, true, false, FAILED_REQUEST_POLICY).run();
 
     when(statusRetrieverStep2.getStatus(JOB_ID)).thenReturn(CaptainStatus.QUARANTINED);
-    new CaptainJoblet(config, notifier, requestUpdater, manifestManager, true, false).run();
+    new CaptainJoblet(config, notifier, requestUpdater, manifestManager, true, false, FAILED_REQUEST_POLICY).run();
 
     verify(requestUpdater, times(2)).setStatus(config.getId(), CAPTAIN_STEP2_B, CaptainStatus.PENDING, CaptainStatus.QUARANTINED);
   }
@@ -234,7 +243,7 @@ public class TestCaptainJoblet {
     CaptainRequestConfig config = new SimpleCaptainConfig(JOB_ID, CaptainStatus.PENDING, CAPTAIN_STEP2_B, APP_TYPE_1);
 
     when(statusRetrieverStep2.getStatus(JOB_ID)).thenReturn(CaptainStatus.PENDING);
-    new CaptainJoblet(config, notifier, requestUpdater, manifestManager, true, false).run();
+    new CaptainJoblet(config, notifier, requestUpdater, manifestManager, true, false, FAILED_REQUEST_POLICY).run();
 
     // i.e. do nothing.
     verify(requestUpdater, times(0)).setStatus(config.getId(), CAPTAIN_STEP2_B, CaptainStatus.PENDING, CaptainStatus.IN_PROGRESS);
@@ -246,7 +255,7 @@ public class TestCaptainJoblet {
     CaptainRequestConfig config = new SimpleCaptainConfig(JOB_ID, CaptainStatus.IN_PROGRESS, CAPTAIN_STEP2_B, APP_TYPE_1);
 
     when(statusRetrieverStep2.getStatus(JOB_ID)).thenReturn(CaptainStatus.COMPLETED);
-    new CaptainJoblet(config, notifier, requestUpdater, manifestManager, true, false).run();
+    new CaptainJoblet(config, notifier, requestUpdater, manifestManager, true, false, FAILED_REQUEST_POLICY).run();
 
     verify(requestUpdater, times(1)).setStatus(config.getId(), CAPTAIN_STEP2_B, CaptainStatus.IN_PROGRESS, CaptainStatus.COMPLETED);
   }
@@ -256,10 +265,10 @@ public class TestCaptainJoblet {
     CaptainRequestConfig config = new SimpleCaptainConfig(JOB_ID, CaptainStatus.IN_PROGRESS, CAPTAIN_STEP2_B, APP_TYPE_1);
 
     when(statusRetrieverStep2.getStatus(JOB_ID)).thenReturn(CaptainStatus.QUARANTINED);
-    new CaptainJoblet(config, notifier, requestUpdater, manifestManager, true, false).run();
+    new CaptainJoblet(config, notifier, requestUpdater, manifestManager, true, false, FAILED_REQUEST_POLICY).run();
 
     when(statusRetrieverStep2.getStatus(JOB_ID)).thenReturn(CaptainStatus.QUARANTINED);
-    new CaptainJoblet(config, notifier, requestUpdater, manifestManager, true, false).run();
+    new CaptainJoblet(config, notifier, requestUpdater, manifestManager, true, false, FAILED_REQUEST_POLICY).run();
 
     verify(requestUpdater, times(2)).setStatus(config.getId(), CAPTAIN_STEP2_B, CaptainStatus.IN_PROGRESS, CaptainStatus.QUARANTINED);
   }
@@ -269,7 +278,7 @@ public class TestCaptainJoblet {
     CaptainRequestConfig config = new SimpleCaptainConfig(JOB_ID, CaptainStatus.IN_PROGRESS, CAPTAIN_STEP2_B, APP_TYPE_1);
 
     when(statusRetrieverStep2.getStatus(JOB_ID)).thenReturn(CaptainStatus.FAILED);
-    new CaptainJoblet(config, notifier, requestUpdater, manifestManager, true, false).run();
+    new CaptainJoblet(config, notifier, requestUpdater, manifestManager, true, false, FAILED_REQUEST_POLICY).run();
 
     // i.e. do nothing
     verify(requestUpdater, times(0)).setStatus(config.getId(), CAPTAIN_STEP2_B, CaptainStatus.IN_PROGRESS, CaptainStatus.COMPLETED);
@@ -282,7 +291,7 @@ public class TestCaptainJoblet {
     CaptainRequestConfig config = new SimpleCaptainConfig(JOB_ID, CaptainStatus.IN_PROGRESS, CAPTAIN_STEP2_B, APP_TYPE_1);
 
     when(statusRetrieverStep2.getStatus(JOB_ID)).thenReturn(CaptainStatus.CANCELLED);
-    new CaptainJoblet(config, notifier, requestUpdater, manifestManager, true, false).run();
+    new CaptainJoblet(config, notifier, requestUpdater, manifestManager, true, false, FAILED_REQUEST_POLICY).run();
 
     verify(requestUpdater, times(1)).cancel(JOB_ID);
   }
@@ -292,7 +301,7 @@ public class TestCaptainJoblet {
     CaptainRequestConfig config = new SimpleCaptainConfig(JOB_ID, CaptainStatus.IN_PROGRESS, CAPTAIN_STEP3, APP_TYPE_1);
 
     when(statusRetrieverStep3.getStatus(JOB_ID)).thenReturn(CaptainStatus.COMPLETED);
-    new CaptainJoblet(config, notifier, requestUpdater, manifestManager, true, false).run();
+    new CaptainJoblet(config, notifier, requestUpdater, manifestManager, true, false, FAILED_REQUEST_POLICY).run();
 
     verify(requestUpdater, times(1)).setStatus(config.getId(), CAPTAIN_STEP3, CaptainStatus.IN_PROGRESS, CaptainStatus.COMPLETED);
   }
@@ -302,8 +311,42 @@ public class TestCaptainJoblet {
   public void testUsesCorrectManifestForAppType() throws Exception {
     CaptainRequestConfig config = new SimpleCaptainConfig(JOB_ID, CaptainStatus.COMPLETED, CAPTAIN_STEP1, APP_TYPE_2);
 
-    new CaptainJoblet(config, notifier, requestUpdater, manifestManager, true, false).run();
+    new CaptainJoblet(config, notifier, requestUpdater, manifestManager, true, false, FAILED_REQUEST_POLICY).run();
 
     verify(requestUpdater, times(1)).setStepAndStatus(config.getId(), CAPTAIN_STEP1, CaptainStatus.COMPLETED, CAPTAIN_STEP5, CaptainStatus.READY);
+  }
+
+  @Test
+  public void testFailedRequestPolicyRetry() throws Exception {
+    testFailedRequestPolicy(FailedRequestPolicy.FailedRequestAction.RETRY, times(1), never());
+  }
+
+  @Test
+  public void testFailedRequestPolicyQuarantine() throws Exception {
+    testFailedRequestPolicy(FailedRequestPolicy.FailedRequestAction.QUARANTINE, never(), times(1));
+  }
+
+  @Test
+  public void testFailedRequestPolicyNoop() throws Exception {
+    testFailedRequestPolicy(FailedRequestPolicy.FailedRequestAction.NO_OP, never(), never());
+  }
+
+  private void testFailedRequestPolicy(
+      FailedRequestPolicy.FailedRequestAction mockedAction,
+      VerificationMode timesRetry,
+      VerificationMode timesQuarantine) throws Exception {
+
+    CaptainRequestConfig config = new SimpleCaptainConfig(
+        JOB_ID,
+        CaptainStatus.FAILED,
+        CAPTAIN_STEP1,
+
+        APP_TYPE_2);
+
+    when(failedRequestPolicyMock.getFailedRequestAction(JOB_ID)).thenReturn(mockedAction);
+    new CaptainJoblet(config, notifier, requestUpdater, manifestManager, true, false, failedRequestPolicyMock).run();
+
+    verify(requestUpdater, timesRetry).retry(JOB_ID);
+    verify(requestUpdater, timesQuarantine).quarantine(JOB_ID);
   }
 }
