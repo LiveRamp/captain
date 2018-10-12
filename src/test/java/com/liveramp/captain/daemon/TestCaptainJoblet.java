@@ -78,7 +78,7 @@ public class TestCaptainJoblet {
   private ManifestManager manifestManager;
   private RequestUpdater requestUpdater;
 
-  private final CaptainStep INITIALIZING = CaptainStep.fromString("INITIALIZING");
+  private final CaptainStep INITIALIZING = CaptainStep.INITIALIZING;
   private final CaptainStep CAPTAIN_STEP1 = CaptainStep.fromString("CAPTAIN_STEP1");
   private final CaptainStep CAPTAIN_STEP2_A = CaptainStep.fromString("CAPTAIN_STEP2_A");
   private final CaptainStep CAPTAIN_STEP2_B = CaptainStep.fromString("CAPTAIN_STEP2_B");
@@ -86,7 +86,7 @@ public class TestCaptainJoblet {
   private final CaptainStep CAPTAIN_STEP4 = CaptainStep.fromString("CAPTAIN_STEP4");
   private final CaptainStep CAPTAIN_STEP5 = CaptainStep.fromString("CAPTAIN_STEP5");
   private final CaptainStep CAPTAIN_STEP6 = CaptainStep.fromString("CAPTAIN_STEP6");
-  private final CaptainStep DONE = CaptainStep.fromString("DONE");
+  private final CaptainStep DONE = CaptainStep.DONE;
 
 
   private final CaptainAppType APP_TYPE_1 = CaptainAppType.fromString("APP_TYPE_1");

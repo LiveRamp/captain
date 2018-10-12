@@ -5,6 +5,9 @@ import org.jetbrains.annotations.NotNull;
 public class CaptainStep {
   private String step;
 
+  public static final CaptainStep INITIALIZING = CaptainStep.fromString("INITIALIZING");
+  public static final CaptainStep DONE = CaptainStep.fromString("DONE");
+
   private CaptainStep(String step) {
     this.step = step;
   }
@@ -36,4 +39,5 @@ public class CaptainStep {
   public String toString() {
     return "CaptainStep{ step=" + step + " }";
   }
+
 }

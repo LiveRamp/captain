@@ -44,7 +44,7 @@ public class DefaultManifestImpl implements Manifest {
   @Override
   public Optional<CaptainStep> getNextStep(CaptainStep step, long jobId) {
     Integer nextStepIndex;
-    if (CaptainStep.fromString("INITIALIZING").equals(step)) {
+    if (CaptainStep.INITIALIZING.equals(step)) {
       nextStepIndex = 0;
     } else {
       Integer stepIndex = indexByStep.get(step);
