@@ -11,6 +11,8 @@ import com.liveramp.captain.notifier.CaptainDaemonInternalNotifier;
 import com.liveramp.captain.notifier.CaptainNotifier;
 import com.liveramp.captain.notifier.DefaultCaptainLoggingNotifier;
 import com.liveramp.captain.request_lock.CaptainRequestLock;
+import com.liveramp.captain.retry.DefaultFailedRequestPolicy;
+import com.liveramp.captain.retry.FailedRequestPolicy;
 import com.liveramp.daemon_lib.Daemon;
 import com.liveramp.daemon_lib.DaemonLock;
 import com.liveramp.daemon_lib.JobletCallback;
@@ -52,12 +54,18 @@ public class BaseCaptainBuilder<T extends BaseCaptainBuilder<T>> {
   private Optional<JobletCallback<CaptainRequestConfig>> onNewConfigCallback = Optional.empty();
   private Optional<JobletCallback<CaptainRequestConfig>> successCallback = Optional.empty();
   private Optional<JobletCallback<CaptainRequestConfig>> failureCallback = Optional.empty();
+  private FailedRequestPolicy failedRequestPolicy = new DefaultFailedRequestPolicy();
 
   protected BaseCaptainBuilder(String identifier, CaptainConfigProducer configProducer, ManifestManager manifestManager, RequestUpdater requestUpdater) {
     this.identifier = identifier;
     this.configProducer = configProducer;
     this.manifestManager = manifestManager;
     this.requestUpdater = requestUpdater;
+  }
+
+  public T setFailedRequestPolicy(FailedRequestPolicy failedRequestPolicy) {
+    this.failedRequestPolicy = failedRequestPolicy;
+    return self;
   }
 
   /**
@@ -185,7 +193,8 @@ public class BaseCaptainBuilder<T extends BaseCaptainBuilder<T>> {
         manifestManager,
         resolvedCaptainNotifier,
         supportsPending,
-        rammingSpeed
+        rammingSpeed,
+        failedRequestPolicy
     );
 
     ThreadingDaemonBuilder<CaptainRequestConfig> daemonBuilder = new ThreadingDaemonBuilder<>(
