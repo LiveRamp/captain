@@ -12,6 +12,7 @@ import org.mockito.runners.MockitoJUnitRunner;
 import org.mockito.verification.VerificationMode;
 
 import com.liveramp.captain.app_type.CaptainAppType;
+import com.liveramp.captain.exception.CaptainCouldNotFindNextStep;
 import com.liveramp.captain.handle_persistor.HandlePersistor;
 import com.liveramp.captain.manifest.DefaultManifestImpl;
 import com.liveramp.captain.manifest.Manifest;
@@ -78,7 +79,6 @@ public class TestCaptainJoblet {
   private ManifestManager manifestManager;
   private RequestUpdater requestUpdater;
 
-  private final CaptainStep INITIALIZING = CaptainStep.fromString("INITIALIZING");
   private final CaptainStep CAPTAIN_STEP1 = CaptainStep.fromString("CAPTAIN_STEP1");
   private final CaptainStep CAPTAIN_STEP2_A = CaptainStep.fromString("CAPTAIN_STEP2_A");
   private final CaptainStep CAPTAIN_STEP2_B = CaptainStep.fromString("CAPTAIN_STEP2_B");
@@ -86,7 +86,6 @@ public class TestCaptainJoblet {
   private final CaptainStep CAPTAIN_STEP4 = CaptainStep.fromString("CAPTAIN_STEP4");
   private final CaptainStep CAPTAIN_STEP5 = CaptainStep.fromString("CAPTAIN_STEP5");
   private final CaptainStep CAPTAIN_STEP6 = CaptainStep.fromString("CAPTAIN_STEP6");
-  private final CaptainStep DONE = CaptainStep.fromString("DONE");
 
 
   private final CaptainAppType APP_TYPE_1 = CaptainAppType.fromString("APP_TYPE_1");
@@ -134,21 +133,12 @@ public class TestCaptainJoblet {
   }
 
   @Test
-  public void testGoToNextStepInitializing() throws Exception {
-    final CaptainRequestConfig config = new SimpleCaptainConfig(JOB_ID, CaptainStatus.COMPLETED, INITIALIZING, APP_TYPE_1);
-
-    new CaptainJoblet(config, notifier, requestUpdater, manifestManager, true, false, FAILED_REQUEST_POLICY).run();
-
-    verify(requestUpdater, times(1)).setStepAndStatus(config.getId(), INITIALIZING, CaptainStatus.COMPLETED, CAPTAIN_STEP1, CaptainStatus.READY);
-  }
-
-  @Test
   public void testGoToNextStepLastStep() throws Exception {
     CaptainRequestConfig config = new SimpleCaptainConfig(JOB_ID, CaptainStatus.COMPLETED, CAPTAIN_STEP6, APP_TYPE_1);
 
     new CaptainJoblet(config, notifier, requestUpdater, manifestManager, true, false, FAILED_REQUEST_POLICY).run();
 
-    verify(requestUpdater, times(1)).setStepAndStatus(config.getId(), CAPTAIN_STEP6, CaptainStatus.COMPLETED, DONE, CaptainStatus.COMPLETED);
+    verify(requestUpdater, times(1)).fail(config.getId());
   }
 
   @Test

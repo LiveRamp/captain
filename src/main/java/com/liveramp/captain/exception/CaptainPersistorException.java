@@ -1,6 +1,6 @@
 package com.liveramp.captain.exception;
 
-public class CaptainPersistorException extends Exception {
+public class CaptainPersistorException extends RuntimeException {
   public CaptainPersistorException(String message, Exception e) {
     super(message, e);
   }

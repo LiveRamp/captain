@@ -7,6 +7,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
 
+import com.liveramp.captain.exception.CaptainCouldNotFindNextStep;
 import com.liveramp.captain.exception.CaptainPersistorException;
 import com.liveramp.captain.lib.CaptainAlertHelpers;
 import com.liveramp.captain.manifest.Manifest;
@@ -138,7 +139,9 @@ public class CaptainJoblet implements Joblet {
       Optional<CaptainStep> nextStepOptional = manifest.getNextStep(config.getStep(), config.getId());
 
       LOG.info(String.format("current step: %s, current status: %s, next step: %s, next status: %s", config.getStep(), config.getStatus(), nextStepOptional, CaptainStatus.READY));
+
       if (nextStepOptional.isPresent()) {
+
         requestUpdater.setStepAndStatus(jobId, config.getStep(), config.getStatus(), nextStepOptional.get(), CaptainStatus.READY);
 
         if (rammingSpeed) {
@@ -150,10 +153,12 @@ public class CaptainJoblet implements Joblet {
           );
           CaptainJoblet.of(newConfig, notifier, requestUpdater, manifestManager, supportsPending, rammingSpeed, failedRequestPolicy).run();
         }
-
       } else {
-        requestUpdater.setStepAndStatus(jobId, config.getStep(), config.getStatus(), CaptainStep.fromString("DONE"), CaptainStatus.COMPLETED);
+        if (!rammingSpeed) {
+          throw new CaptainCouldNotFindNextStep(config.getId(), config.getStep(), config.getStatus());
+        }
       }
+
     } catch (Exception e) {
       String subject = String.format("%s: error while transitioning steps for request %s from step: %s.",
           CaptainAlertHelpers.getHostName(), config.getId(), config.getStep()

@@ -69,15 +69,6 @@ public class TestDefaultManifestImpl {
   }
 
   @Test
-  public void testFirstStepOptional() {
-    Manifest testManifest = new DefaultManifestImpl(Lists.newArrayList(
-        optionalWaypoint1,
-        nonOptionalWaypoint1
-    ));
-    checkExpectedNextStep(testManifest, CaptainStep.fromString("INITIALIZING"), nonOptionalWaypoint1.getStep());
-  }
-
-  @Test
   public void testGetNextStepOptionalLastStep() {
     Manifest testManifest = new DefaultManifestImpl(Lists.newArrayList(
         nonOptionalWaypoint1,
