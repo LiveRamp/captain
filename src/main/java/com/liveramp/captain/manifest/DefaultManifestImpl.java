@@ -43,16 +43,11 @@ public class DefaultManifestImpl implements Manifest {
 
   @Override
   public Optional<CaptainStep> getNextStep(CaptainStep step, long jobId) {
-    Integer nextStepIndex;
-    if (CaptainStep.fromString("INITIALIZING").equals(step)) {
-      nextStepIndex = 0;
-    } else {
-      Integer stepIndex = indexByStep.get(step);
-      if (null == stepIndex) {
-        throw new RuntimeException(String.format("could not find step: %s in manifest: %s", step, waypointByStep.keySet()));
-      }
-      nextStepIndex = indexByStep.get(step) + 1;
+    Integer stepIndex = indexByStep.get(step);
+    if (null == stepIndex) {
+      throw new RuntimeException(String.format("could not find step: %s in manifest: %s", step, waypointByStep.keySet()));
     }
+    Integer nextStepIndex = indexByStep.get(step) + 1;
 
     if (nextStepIndex < steps.size()) {
       CaptainStep nextStep = stepByIndex.get(nextStepIndex);
