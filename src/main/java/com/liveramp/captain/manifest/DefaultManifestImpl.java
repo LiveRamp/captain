@@ -16,7 +16,7 @@ public class DefaultManifestImpl implements Manifest {
   private List<Waypoint> steps;
   private Map<CaptainStep, Integer> indexByStep;
   private Map<Integer, CaptainStep> stepByIndex;
-  private Map<String, Waypoint> waypointByStep;
+  private Map<CaptainStep, Waypoint> waypointByStep;
   private RequestContextProducerFactory requestContextProducerFactory;
 
   public DefaultManifestImpl(List<Waypoint> steps, RequestContextProducerFactory requestContextProducerFactory) {
@@ -33,8 +33,7 @@ public class DefaultManifestImpl implements Manifest {
       stepByIndex.put(currentIdx, waypoint.getStep());
       currentIdx++;
     }
-    // feels like this should probably be CaptainStep not string.
-    waypointByStep = steps.stream().collect(Collectors.toMap(w -> w.getStep().get(), w -> w));
+    waypointByStep = steps.stream().collect(Collectors.toMap(Waypoint::getStep, w -> w));
   }
 
   public DefaultManifestImpl(List<Waypoint> steps) {
@@ -68,7 +67,7 @@ public class DefaultManifestImpl implements Manifest {
 
   @Override
   public Waypoint getWaypointForStep(CaptainStep step) {
-    return waypointByStep.get(step.get());
+    return waypointByStep.get(step);
   }
 
   @Override
