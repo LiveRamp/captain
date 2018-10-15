@@ -7,7 +7,7 @@ import com.liveramp.captain.step.CaptainStep;
 import com.liveramp.captain.waypoint.Waypoint;
 
 public interface Manifest {
-  Optional<CaptainStep> getNextStep(CaptainStep step, long jobId);
+  Optional<CaptainStep> getNextStep(CaptainStep step, long id);
 
   Waypoint getWaypointForStep(CaptainStep step);
 

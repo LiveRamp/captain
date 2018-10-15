@@ -23,7 +23,7 @@ public class WaypointSubmitterImpl<ServiceHandle> implements WaypointSubmitter {
   }
 
   @Override
-  public void submitServiceRequest(long jobId, RequestContext requestOptions) throws Exception {
+  public void submitServiceRequest(long id, RequestContext requestOptions) throws Exception {
     // try to instantiate all of the components before taking ANY action.
     RequestSubmitter<ServiceHandle> requestSubmitter = requestSubmitterFactory.create();
     HandlePersistor<ServiceHandle> serviceHandlePersistor = null;
@@ -31,12 +31,12 @@ public class WaypointSubmitterImpl<ServiceHandle> implements WaypointSubmitter {
       serviceHandlePersistor = serviceHandlePersistorFactory.create();
     }
 
-    ServiceHandle serviceHandle = requestSubmitter.submit(jobId, requestOptions);
+    ServiceHandle serviceHandle = requestSubmitter.submit(id, requestOptions);
     if (serviceHandlePersistor != null) {
       try {
-        serviceHandlePersistor.persist(jobId, serviceHandle);
+        serviceHandlePersistor.persist(id, serviceHandle);
       } catch (Exception e) {
-        throw CaptainPersistorException.of(e, jobId, step.toString(), serviceHandle);
+        throw CaptainPersistorException.of(e, id, step.toString(), serviceHandle);
       }
     }
   }

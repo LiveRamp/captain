@@ -5,7 +5,7 @@ package com.liveramp.captain.request_lock;
  * locked requests to your config producer consider using CaptainRequestLockWithRunningIds
  */
 public interface CaptainRequestLock {
-  void lock(long jobId);
+  void lock(long id);
 
-  void unlock(long jobId);
+  void unlock(long id);
 }

@@ -11,14 +11,14 @@ public class StepPredicates {
 
   private static class AlwaysTrueStepPredicate implements StepPredicate {
     @Override
-    public boolean shouldSkipStep(long jobId) {
+    public boolean shouldSkipStep(long id) {
       return true;
     }
   }
 
   private static class AlwaysFalseStepPredicate implements StepPredicate {
     @Override
-    public boolean shouldSkipStep(long jobId) {
+    public boolean shouldSkipStep(long id) {
       return false;
     }
   }
