@@ -8,7 +8,7 @@ public class NoOpWaypointSubmitter implements WaypointSubmitter {
   }
 
   @Override
-  public void submitServiceRequest(long id, RequestContext requestOptions) {
+  public void submit(long id, RequestContext requestOptions) {
   }
 
   public static NoOpWaypointSubmitter get() {

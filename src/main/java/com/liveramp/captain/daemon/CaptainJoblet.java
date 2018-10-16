@@ -181,7 +181,7 @@ public class CaptainJoblet implements Joblet {
     try {
       WaypointSubmitter waypointSubmitter = waypoint.getSubmitter();
       RequestContext requestOptions = manifest.getRequestContextProducerFactory().create().get(id);
-      waypointSubmitter.submitServiceRequest(config.getId(), requestOptions);
+      waypointSubmitter.submit(config.getId(), requestOptions);
 
     } catch (CaptainPersistorException e) {
       String subject = String.format("%s: handle persistence failed for request %s", CaptainAlertHelpers.getHostName(), id);
