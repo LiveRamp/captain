@@ -4,6 +4,9 @@ import java.util.Optional;
 
 import com.liveramp.captain.status.CaptainStatus;
 
+/*
+ * code so that the ExampleCaptainWorkflow can run, but not actually useful in learning about captain.
+ */
 @SuppressWarnings("OptionalUsedAsFieldOrParameterType")
 public class MockRequest {
   // representation of what a record my look like in our mockdb.

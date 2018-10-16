@@ -1,5 +1,8 @@
 package com.liveramp.captain.example.internals;
 
+/*
+ * code so that the ExampleCaptainWorkflow can run, but not actually useful in learning about captain.
+ */
 public class MockDataScience {
   public static class Service1 extends DataScienceService {
 

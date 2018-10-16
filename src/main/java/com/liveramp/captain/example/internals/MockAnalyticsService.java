@@ -2,6 +2,9 @@ package com.liveramp.captain.example.internals;
 
 import com.liveramp.captain.request_context.RequestContext;
 
+/*
+ * code so that the ExampleCaptainWorkflow can run, but not actually useful in learning about captain.
+ */
 public class MockAnalyticsService {
   private MockServiceStatusProvider mockServiceStatusProvider = new MockServiceStatusProvider();
 

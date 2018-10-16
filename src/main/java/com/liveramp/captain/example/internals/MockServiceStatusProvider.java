@@ -3,6 +3,9 @@ package com.liveramp.captain.example.internals;
 import java.util.HashMap;
 import java.util.Map;
 
+/*
+ * code so that the ExampleCaptainWorkflow can run, but not actually useful in learning about captain.
+ */
 // tracks the number of times the status has been requested for an id. on the third try says it's done. arbitrary, but
 // good enough to simulate behavior we might see.
 public class MockServiceStatusProvider {

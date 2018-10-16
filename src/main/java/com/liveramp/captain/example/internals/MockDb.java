@@ -12,6 +12,9 @@ import static com.liveramp.captain.example.ExampleCaptainWorkflow.STEP1;
 import static com.liveramp.captain.example.ExampleCaptainWorkflow.STEP2;
 import static com.liveramp.captain.example.ExampleCaptainWorkflow.STEP5;
 
+/*
+ * code so that the ExampleCaptainWorkflow can run, but not actually useful in learning about captain.
+ */
 public class MockDb {
   // our mock db for the sake of running some requests through our captain workflow. feel free to ignore. use a real db.
   private static final Map<Long, MockRequest> requests = MapBuilder
