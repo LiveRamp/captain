@@ -6,7 +6,7 @@ import com.liveramp.captain.request_context.RequestContext;
 
 public class NoOpSubmitter implements RequestSubmitter<Long> {
   @Override
-  public Long submit(long jobId, RequestContext options) {
+  public Long submit(long id, RequestContext options) {
     return null;
   }
 

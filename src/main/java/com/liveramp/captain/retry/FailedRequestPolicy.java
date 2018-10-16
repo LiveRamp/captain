@@ -14,10 +14,10 @@ public interface FailedRequestPolicy {
 
   /***
    * Method called by captain to know what to do with a failed request
-   * @param jobId id of the failed request
+   * @param id id of the failed request
    * @return action to be executed by captain
    */
-  FailedRequestAction getFailedRequestAction(Long jobId);
+  FailedRequestAction getFailedRequestAction(Long id);
 
   enum FailedRequestAction {
     RETRY(1),

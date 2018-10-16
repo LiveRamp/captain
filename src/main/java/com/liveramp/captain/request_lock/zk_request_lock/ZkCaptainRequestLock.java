@@ -23,18 +23,18 @@ public class ZkCaptainRequestLock implements CaptainRequestLockWithRunningIds {
   }
 
   @Override
-  public void lock(long jobId) {
+  public void lock(long id) {
     try {
-      requestLock.acquire(String.valueOf(jobId));
+      requestLock.acquire(String.valueOf(id));
     } catch (Exception e) {
       throw new RuntimeException(e);
     }
   }
 
   @Override
-  public void unlock(long jobId) {
+  public void unlock(long id) {
     try {
-      requestLock.releaseSafe(String.valueOf(jobId));
+      requestLock.releaseSafe(String.valueOf(id));
     } catch (Exception e) {
       throw new RuntimeException(e);
     }
