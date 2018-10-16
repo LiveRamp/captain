@@ -1,9 +1,6 @@
 package com.liveramp.captain.example;
 
 import java.io.IOException;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Random;
 import java.util.concurrent.TimeUnit;
 
 import com.google.common.collect.Lists;
@@ -16,6 +13,11 @@ import com.liveramp.captain.daemon.CaptainConfigProducer;
 import com.liveramp.captain.daemon.CaptainRequestConfig;
 import com.liveramp.captain.daemon.RequestUpdater;
 import com.liveramp.captain.daemon.SimpleCaptainConfig;
+import com.liveramp.captain.example.internals.MockAnalyticsService;
+import com.liveramp.captain.example.internals.MockDataScience;
+import com.liveramp.captain.example.internals.MockDb;
+import com.liveramp.captain.example.internals.MockIngestionService;
+import com.liveramp.captain.example.internals.MockRequest;
 import com.liveramp.captain.handle_persistor.HandlePersistor;
 import com.liveramp.captain.manifest.DefaultManifestImpl;
 import com.liveramp.captain.manifest.Manifest;
@@ -35,18 +37,18 @@ import com.liveramp.commons.collections.map.MapBuilder;
 import com.liveramp.daemon_lib.Daemon;
 
 public class ExampleCaptainWorkflow {
-  static final String APP1 = "App1";
-  static final String APP2 = "App2";
-  static final String STEP1 = "Step1";
-  static final String STEP2 = "Step2";
-  static final String STEP3 = "Step3";
-  static final String STEP4 = "Step4";
-  static final String STEP5 = "DONE";
+  public static final String APP1 = "App1";
+  public static final String APP2 = "App2";
+  public static final String STEP1 = "Step1";
+  public static final String STEP2 = "Step2";
+  private static final String STEP3 = "Step3";
+  private static final String STEP4 = "Step4";
+  public static final String STEP5 = "DONE";
 
   private Logger LOG = LoggerFactory.getLogger(ExampleCaptainWorkflow.class);
 
   /**
-   * For sake of example let's say we have our team is responsible for running some job that performs analytics on a file.
+   * For sake of example, let's say our team is responsible for running some job that performs analytics on a file.
    * <p>
    * Doing this requires 3 main steps:
    * 1) Wait for ingestion of the file to complete by some other team (i.e. poll until we know the file is ready for us to use.
@@ -66,7 +68,11 @@ public class ExampleCaptainWorkflow {
 
   private Daemon<CaptainRequestConfig> build() throws IOException, IllegalAccessException, InstantiationException {
     // thin persistence layer for sake of example that looks something like one might store a request in their own db.
-    final ExampleInternals.MockDb mockDb = new ExampleInternals.MockDb();
+    final MockDb mockDb = new MockDb();
+    final MockIngestionService ingestionService = new MockIngestionService();
+    final MockAnalyticsService analyticsService = new MockAnalyticsService();
+    final MockDataScience.Service1 dataScienceService1 = new MockDataScience.Service1();
+    final MockDataScience.Service2 dataScienceService2 = new MockDataScience.Service2();
 
     // Remember we need to provide Captain 3 main resources: 1) Manifest, 2) Config Producer, 3) Request Updater
 
@@ -74,27 +80,34 @@ public class ExampleCaptainWorkflow {
     // Since we have have two apps running in our captain instance. We provide captain with two manifests and a key
     // to determine manifest it should use for each request. Hopefully by skimming over these manifests it's pretty easy
     // to map what they're doing at a high level to our stated goals above.
+    // note: We are using DefaultManifestImpl in this example. This is a built-in class that Captain gives you to build
+    // manifests quickly. Captain exposes a Manifest interface so you can implement your manifests in more dynamic ways
+    // The default impl gives you the basics of what you need.
+    // note: Captain also exposes a ManifestFactory interface, which allows you to delay the instantiation of your
+    // manifests (helpful, for example, if you want to lazily instantiate connections to external resources) and makes
+    // it easy to share external resources (e.g. db connections) across manifests. For the sake of this example, we're
+    // starting with a simple implementation that doesn't worry about manifest factories.
     final Manifest exampleManifestApp1 = new DefaultManifestImpl(Lists.newArrayList(
         // Control Flow Waypoints help us hold progress on a request until certain conditions are met. In this case, we
         // we are waiting for the ingestion of the file to complete.
-        new ControlFlowWaypoint(CaptainStep.fromString(STEP1), new IngestionComplete()),
+        new ControlFlowWaypoint(CaptainStep.fromString(STEP1), new IngestionComplete(ingestionService)),
         // Async Waypoints are designed to submit work to an external service and then wait for that work to be completed.
         // In this case you can see the code for how we would submit the work, how we would track the external id for that work,
         // and finally how we determine that work is completed.
-        new AsyncWaypoint<>(CaptainStep.fromString(STEP2), new MapReduceJobSubmitter(), new MapReduceJobHandlePersistor(mockDb), new MapReduceJobStatusRetriever(mockDb)),
+        new AsyncWaypoint<>(CaptainStep.fromString(STEP2), new MapReduceJobSubmitter(analyticsService), new MapReduceJobHandlePersistor(mockDb), new MapReduceJobStatusRetriever(analyticsService, mockDb)),
         // Sync Waypoints allows us to submit work to an external service and then move on. For example, maybe we report
         // a number to the data science team, and once that REST call is complete, we can move on.
-        new SyncWaypoint<>(CaptainStep.fromString(STEP3), new ReportToDataScienceTeam1()),
+        new SyncWaypoint<>(CaptainStep.fromString(STEP3), new ReportToDataScienceTeam1(dataScienceService1)),
         // By convention only, it's sometimes helpful to just have a No Op "DONE" step. This is not necessary; this step
         // could be removed entirely.
         new SyncWaypoint<>(CaptainStep.fromString(STEP5), new NoOpSubmitter())
     ));
 
     final Manifest exampleManifestApp2 = new DefaultManifestImpl(Lists.newArrayList(
-        new ControlFlowWaypoint(CaptainStep.fromString(STEP1), new IngestionComplete()),
-        new AsyncWaypoint<>(CaptainStep.fromString(STEP2), new MapReduceJobSubmitter(), new MapReduceJobHandlePersistor(mockDb), new MapReduceJobStatusRetriever(mockDb)),
+        new ControlFlowWaypoint(CaptainStep.fromString(STEP1), new IngestionComplete(ingestionService)),
+        new AsyncWaypoint<>(CaptainStep.fromString(STEP2), new MapReduceJobSubmitter(analyticsService), new MapReduceJobHandlePersistor(mockDb), new MapReduceJobStatusRetriever(analyticsService, mockDb)),
         // Note: this is our second app type where we're reporting to Data Science Team 2.
-        new SyncWaypoint<>(CaptainStep.fromString(STEP4), new ReportToDataScienceTeam2()),
+        new SyncWaypoint<>(CaptainStep.fromString(STEP4), new ReportToDataScienceTeam2(dataScienceService2)),
         new SyncWaypoint<>(CaptainStep.fromString(STEP5), new NoOpSubmitter())
     ));
 
@@ -120,28 +133,28 @@ public class ExampleCaptainWorkflow {
     // check out the README or the CaptainBuilder javadocs for more info on some of the other settings that are set below.
     return CaptainBuilder.of("example-captain-daemon", configProducer, manifestManager, requestUpdater)
         .setNotifier(daemonNotifier)
-        .setRammingSpeed(false)
-        .setMaxThreads(1)
         .setConfigWaitTime(1, TimeUnit.SECONDS)
         .setNextConfigWaitTime(1, TimeUnit.SECONDS)
         .build();
   }
 
   class ExampleConfigProducer implements CaptainConfigProducer {
-    private ExampleInternals.MockDb mockDb;
+    private MockDb mockDb;
 
-    ExampleConfigProducer(ExampleInternals.MockDb mockDb) {
+    ExampleConfigProducer(MockDb mockDb) {
       this.mockDb = mockDb;
     }
 
     @Override
     public CaptainRequestConfig getNextConfig() {
-      System.out.println("config producer running...");
+      LOG.info("config producer running...");
       // pretty common parameters we see in querying "next" requests is that we only pull in requests that are in an "active"
       // state. practically speaking that means that they are: 1) not in the "DONE" step--this is an example of where having a
       // "DONE" step just makes reasoning about things a bit easier and 2) not in a status of quarantined.
-      ExampleInternals.MockRequest mockRequest = mockDb.getNextRequest();
+      MockRequest mockRequest = mockDb.getNextRequest();
 
+      // note: SimpleCaptainConfig is a built-in for Captain, but you can implement your own config by implementing the
+      // CaptainRequestConfig interface.
       SimpleCaptainConfig config = new SimpleCaptainConfig(
           mockRequest.id,
           mockRequest.status,
@@ -149,15 +162,15 @@ public class ExampleCaptainWorkflow {
           CaptainAppType.fromString(mockRequest.appType)
       );
 
-      System.out.println("config = " + config);
+      LOG.info("config = " + config);
       return config;
     }
   }
 
   class ExampleRequestUpdater implements RequestUpdater {
-    private ExampleInternals.MockDb mockDb;
+    private MockDb mockDb;
 
-    ExampleRequestUpdater(ExampleInternals.MockDb mockDb) {
+    ExampleRequestUpdater(MockDb mockDb) {
       this.mockDb = mockDb;
     }
 
@@ -184,39 +197,49 @@ public class ExampleCaptainWorkflow {
 
   class IngestionComplete implements StatusRetriever {
 
+    private MockIngestionService ingestionService;
+
+    IngestionComplete(MockIngestionService ingestionService) {
+      this.ingestionService = ingestionService;
+    }
+
     @Override
     public CaptainStatus getStatus(long id) {
-      // pretend this is a call to the ingestion team that's checking if the file is ready for us to process.
-      // e.g. ingestionService.getFileStatus(id);
-
-      // instead we have a random boolean generator for the sake of example.
-      System.out.println(String.format("check if file with id: %s is ready", id));
-      boolean fileReady = new Random().nextBoolean();
-      System.out.println("fileReady = " + fileReady);
-      return fileReady ? CaptainStatus.COMPLETED : CaptainStatus.IN_PROGRESS; // returning COMPLETED means we go forward.
-      // IN_PROGRESS means we'll try again later.
+      // call to the ingestion team that's checks to see if the file is ready for us to process.
+      LOG.info(String.format("check if file with id: %s is ready", id));
+      boolean fileReady = ingestionService.isFileDone(id);
+      LOG.info("fileReady = " + fileReady);
+      if (fileReady) {
+        return CaptainStatus.COMPLETED; // returning COMPLETED means we go forward.
+      } else {
+        return CaptainStatus.IN_PROGRESS; // IN_PROGRESS means we'll try again later.
+      }
     }
   }
 
   class MapReduceJobSubmitter implements RequestSubmitter<Long> {
 
+    private MockAnalyticsService analyticsService;
+
+    MapReduceJobSubmitter(MockAnalyticsService analyticsService) {
+
+      this.analyticsService = analyticsService;
+    }
+
     @Override
     public Long submit(long id, RequestContext options) {
       // pretend there's some rest service that we can hit with the path of our file and perhaps some other parameters.
       // it returns back to us some id of the job that it's going to kick off so we can check back later.
-      // e.g. analyticsEngineService.submit(id, filePath, some other params);
-
-      // for sake of example let's just say we submitted everything and here's the job id we got back.
-      long jobId = 255L + id;
-      System.out.println(String.format("submitting request with id: %s map reduce service and got job id: %s", id, jobId));
+      long jobId = analyticsService.submit(id, options);
+      LOG.info(String.format("submitting request with id: %s map reduce service and got job id: %s", id, jobId));
       return jobId;
     }
   }
 
   class MapReduceJobHandlePersistor implements HandlePersistor<Long> {
-    private ExampleInternals.MockDb mockDb;
+    private MockDb mockDb;
 
-    MapReduceJobHandlePersistor(ExampleInternals.MockDb mockDb) {
+    MapReduceJobHandlePersistor(MockDb mockDb) {
       this.mockDb = mockDb;
     }
 
@@ -228,9 +251,11 @@ public class ExampleCaptainWorkflow {
   }
 
   class MapReduceJobStatusRetriever implements StatusRetriever {
-    private ExampleInternals.MockDb mockDb;
+    private MockAnalyticsService analyticsService;
+    private MockDb mockDb;
 
-    MapReduceJobStatusRetriever(ExampleInternals.MockDb mockDb) {
+    MapReduceJobStatusRetriever(MockAnalyticsService analyticsService, MockDb mockDb) {
+      this.analyticsService = analyticsService;
       this.mockDb = mockDb;
     }
 
@@ -238,28 +263,33 @@ public class ExampleCaptainWorkflow {
     public CaptainStatus getStatus(long id) {
       // now we can check back in with our map reduce analytics service to see if it finished our job. we pull the handle
       // out of our db...
-      ExampleInternals.MockRequest request = mockDb.getRequest(id);
+      MockRequest request = mockDb.getRequest(id);
       @SuppressWarnings("ConstantConditions") Long jobId = request.requestHandle.get();
       // and then make a rest call to the analytics service.
-      // e.g. analyticsEngineService.getStatus(jobId);
-      // same deal as before, if it's done, then we return CaptainStatus.COMPLETED and move on. Otherwise IN_PROGRESS.
+      boolean jobDone = analyticsService.isRequestComplete(jobId);
 
-      // for the sake of our example we'll call our random boolean generator instead of the a real service.
-      System.out.println(String.format("check if job id: %s for id: %s is completed", jobId, id));
-      boolean jobDone = new Random().nextBoolean();
-      System.out.println("jobDone = " + jobDone);
+      // same deal as before, if it's done, then we return CaptainStatus.COMPLETED and move on. Otherwise IN_PROGRESS.
+      LOG.info(String.format("check if job id: %s for id: %s is completed", jobId, id));
+      LOG.info("jobDone = " + jobDone);
       return jobDone ? CaptainStatus.COMPLETED : CaptainStatus.IN_PROGRESS;
     }
   }
 
   class ReportToDataScienceTeam1 implements RequestSubmitter<Long> {
 
+    private MockDataScience.Service1 dataScienceService1;
+
+    ReportToDataScienceTeam1(MockDataScience.Service1 dataScienceService1) {
+      this.dataScienceService1 = dataScienceService1;
+    }
+
     @Override
     public Long submit(long id, RequestContext options) {
       // now we report to our data science team.
       // eg. dataScienceTeam1Service.submitResults(id, and whatever else we output from our job...);
 
-      System.out.println("calling a data science team 1's with request id:" + id);
+      LOG.info("calling a data science team 1's with request id:" + id);
+      dataScienceService1.submitData(String.valueOf(id));
       // in this case we're not worried about saving a handle. so we just use Long as the generic in RequestSubmitter
       // and return null;
       return null;
@@ -268,10 +298,17 @@ public class ExampleCaptainWorkflow {
 
   class ReportToDataScienceTeam2 implements RequestSubmitter<Long> {
 
+    private MockDataScience.Service2 dataScienceService2;
+
+    ReportToDataScienceTeam2(MockDataScience.Service2 dataScienceService2) {
+      this.dataScienceService2 = dataScienceService2;
+    }
+
     @Override
     public Long submit(long id, RequestContext options) {
       // same for team 2.
-      System.out.println("calling a data science team 1's with request id:" + id);
+      LOG.info("calling a data science team 1's with request id:" + id);
+      dataScienceService2.submitData(String.valueOf(id));
       return null;
     }
   }
