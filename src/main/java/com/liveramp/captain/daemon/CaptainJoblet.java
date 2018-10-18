@@ -81,7 +81,7 @@ public class CaptainJoblet implements Joblet {
   @Override
   public void run() throws DaemonException {
     try {
-      MDC.put("jobId", String.valueOf(config.getId()));
+      MDC.put("id", String.valueOf(config.getId()));
       switch (config.getStatus()) {
         case COMPLETED:
           goToNextStep(config);
@@ -110,19 +110,19 @@ public class CaptainJoblet implements Joblet {
       requestUpdater.fail(config.getId());
       throw e;
     } finally {
-      MDC.remove("jobId");
+      MDC.remove("id");
     }
   }
 
   private void executeFailedRequestPolicy(CaptainRequestConfig config) {
-    long jobId = config.getId();
-    FailedRequestPolicy.FailedRequestAction failedRequestAction = failedRequestPolicy.getFailedRequestAction(jobId);
+    long id = config.getId();
+    FailedRequestPolicy.FailedRequestAction failedRequestAction = failedRequestPolicy.getFailedRequestAction(id);
     switch (failedRequestAction) {
       case RETRY:
-        requestUpdater.retry(jobId);
+        requestUpdater.retry(id);
         break;
       case QUARANTINE:
-        requestUpdater.quarantine(jobId);
+        requestUpdater.quarantine(id);
         break;
       case NO_OP:
         break;
@@ -135,14 +135,14 @@ public class CaptainJoblet implements Joblet {
     try {
       Manifest manifest = getAccountManifest();
 
-      long jobId = config.getId();
+      long id = config.getId();
       Optional<CaptainStep> nextStepOptional = manifest.getNextStep(config.getStep(), config.getId());
 
       LOG.info(String.format("current step: %s, current status: %s, next step: %s, next status: %s", config.getStep(), config.getStatus(), nextStepOptional, CaptainStatus.READY));
 
       if (nextStepOptional.isPresent()) {
 
-        requestUpdater.setStepAndStatus(jobId, config.getStep(), config.getStatus(), nextStepOptional.get(), CaptainStatus.READY);
+        requestUpdater.setStepAndStatus(id, config.getStep(), config.getStatus(), nextStepOptional.get(), CaptainStatus.READY);
 
         if (rammingSpeed) {
           SimpleCaptainConfig newConfig = new SimpleCaptainConfig(
@@ -172,7 +172,7 @@ public class CaptainJoblet implements Joblet {
   private void submitRequest(CaptainRequestConfig config) throws DaemonException {
     Manifest manifest = getAccountManifest();
     Waypoint waypoint = manifest.getWaypointForStep(config.getStep());
-    long jobId = config.getId();
+    long id = config.getId();
 
     // if db is out we will make the same request over and over again. not good.
     boolean isAsyncStep = waypoint.getType().equals(WaypointType.ASYNC);
@@ -180,18 +180,18 @@ public class CaptainJoblet implements Joblet {
 
     try {
       WaypointSubmitter waypointSubmitter = waypoint.getSubmitter();
-      RequestContext requestOptions = manifest.getRequestContextProducerFactory().create().get(jobId);
-      waypointSubmitter.submitServiceRequest(config.getId(), requestOptions);
+      RequestContext requestOptions = manifest.getRequestContextProducerFactory().create().get(id);
+      waypointSubmitter.submit(config.getId(), requestOptions);
 
     } catch (CaptainPersistorException e) {
-      String subject = String.format("%s: handle persistence failed for request %s", CaptainAlertHelpers.getHostName(), jobId);
+      String subject = String.format("%s: handle persistence failed for request %s", CaptainAlertHelpers.getHostName(), id);
       notifier.notify(subject, e, CaptainNotifier.NotificationLevel.ERROR);
-      requestUpdater.cancel(jobId);
+      requestUpdater.cancel(id);
       return;
     } catch (Throwable e) {
-      String subject = String.format("%s: error while submitting request %s", CaptainAlertHelpers.getHostName(), jobId);
+      String subject = String.format("%s: error while submitting request %s", CaptainAlertHelpers.getHostName(), id);
       notifier.notify(subject, e, CaptainNotifier.NotificationLevel.ERROR);
-      requestUpdater.fail(jobId);
+      requestUpdater.fail(id);
       return;
     }
 
@@ -208,7 +208,7 @@ public class CaptainJoblet implements Joblet {
     }
 
     LOG.info(String.format("current step %s, current status: %s, next status: %s", config.getStep(), config.getStatus(), targetStatus));
-    requestUpdater.setStatus(jobId, config.getStep(), config.getStatus(), targetStatus);
+    requestUpdater.setStatus(id, config.getStep(), config.getStatus(), targetStatus);
 
     if (rammingSpeed) {
       SimpleCaptainConfig newConfig = new SimpleCaptainConfig(
@@ -225,7 +225,7 @@ public class CaptainJoblet implements Joblet {
     try {
       Manifest manifest = getAccountManifest();
       Waypoint waypoint = manifest.getWaypointForStep(config.getStep());
-      long jobId = config.getId();
+      long id = config.getId();
 
       CaptainStatus status = waypoint.getStatusRetrieverFactory().create().getStatus(config.getId());
 
@@ -236,7 +236,7 @@ public class CaptainJoblet implements Joblet {
       } else if (status.equals(CaptainStatus.QUARANTINED)) {
         targetStatus = CaptainStatus.QUARANTINED;
       } else if (status.equals(CaptainStatus.CANCELLED)) {
-        requestUpdater.cancel(jobId);
+        requestUpdater.cancel(id);
         return;
       } else {
         // do nothing
@@ -244,7 +244,7 @@ public class CaptainJoblet implements Joblet {
       }
 
       LOG.info(String.format("current step %s, current status: %s, next status: %s", config.getStep(), config.getStatus(), targetStatus));
-      requestUpdater.setStatus(jobId, config.getStep(), config.getStatus(), targetStatus);
+      requestUpdater.setStatus(id, config.getStep(), config.getStatus(), targetStatus);
     } catch (Exception e) {
       String subject = String.format("%s: error while checking if service has begun processing req %s in step: %s",
           config.getId(), CaptainAlertHelpers.getHostName(), config.getStep()
@@ -260,7 +260,7 @@ public class CaptainJoblet implements Joblet {
     try {
       Manifest manifest = getAccountManifest();
       Waypoint waypoint = manifest.getWaypointForStep(config.getStep());
-      long jobId = config.getId();
+      long id = config.getId();
 
       CaptainStatus status = waypoint.getStatusRetrieverFactory().create().getStatus(config.getId());
 
@@ -277,14 +277,14 @@ public class CaptainJoblet implements Joblet {
       } else if (status.equals(CaptainStatus.QUARANTINED_PO)) {
         targetStatus = CaptainStatus.QUARANTINED_PO;
       } else if (status.equals(CaptainStatus.CANCELLED)) {
-        requestUpdater.cancel(jobId);
+        requestUpdater.cancel(id);
         return;
       } else { // i.e. status.equals(ServiceRequestStatus.PENDING) || status.equals(ServiceRequestStatus.IN_PROGRESS)
-        throw new RuntimeException(String.format("request %s in an unexpected state. in the status_retriever step it was in status %s", jobId, status));
+        throw new RuntimeException(String.format("request %s in an unexpected state. in the status_retriever step it was in status %s", id, status));
       }
 
       LOG.info(String.format("current step %s, current status: %s, next status: %s", config.getStep(), config.getStatus(), targetStatus));
-      requestUpdater.setStatus(jobId, config.getStep(), config.getStatus(), targetStatus);
+      requestUpdater.setStatus(id, config.getStep(), config.getStatus(), targetStatus);
 
       if (rammingSpeed && targetStatus.equals(CaptainStatus.COMPLETED)) {
         SimpleCaptainConfig newConfig = new SimpleCaptainConfig(

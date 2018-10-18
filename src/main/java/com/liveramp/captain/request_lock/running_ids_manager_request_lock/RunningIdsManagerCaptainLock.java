@@ -16,13 +16,13 @@ public class RunningIdsManagerCaptainLock implements CaptainRequestLockWithRunni
   }
 
   @Override
-  public void lock(long jobId) {
-    runningIdsManager.add(jobId);
+  public void lock(long id) {
+    runningIdsManager.add(id);
   }
 
   @Override
-  public void unlock(long jobId) {
-    runningIdsManager.remove(jobId);
+  public void unlock(long id) {
+    runningIdsManager.remove(id);
   }
 
   @Override

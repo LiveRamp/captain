@@ -22,7 +22,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 
 public class TestZKRequestLock {
-  private static final String REQUEST_TYPE = "CUSTOMER_LINK_REQUEST";
+  private static final String REQUEST_TYPE = "CAPTAIN_REQUESTS";
   private static final String PATH = "/zk_production_locks/" + REQUEST_TYPE;
 
   private TestingCluster cluster;

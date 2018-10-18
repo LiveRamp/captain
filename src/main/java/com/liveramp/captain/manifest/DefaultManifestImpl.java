@@ -42,7 +42,7 @@ public class DefaultManifestImpl implements Manifest {
   }
 
   @Override
-  public Optional<CaptainStep> getNextStep(CaptainStep step, long jobId) {
+  public Optional<CaptainStep> getNextStep(CaptainStep step, long id) {
     Integer stepIndex = indexByStep.get(step);
     if (null == stepIndex) {
       throw new RuntimeException(String.format("could not find step: %s in manifest: %s", step, waypointByStep.keySet()));
@@ -55,10 +55,10 @@ public class DefaultManifestImpl implements Manifest {
         return Optional.of(nextStep);
       } else {
         Waypoint waypoint = getWaypointForStep(nextStep);
-        if (!waypoint.getOptionalStepPredicate().get().create().shouldSkipStep(jobId)) {
+        if (!waypoint.getOptionalStepPredicate().get().create().shouldSkipStep(id)) {
           return Optional.of(nextStep);
         } else {
-          return getNextStep(nextStep, jobId);
+          return getNextStep(nextStep, id);
         }
       }
     }

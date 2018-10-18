@@ -5,9 +5,9 @@ public class CaptainPersistorException extends RuntimeException {
     super(message, e);
   }
 
-  public static <ServiceHandle> CaptainPersistorException of(Exception e, long jobId, String stepString, ServiceHandle serviceHandle) {
+  public static <ServiceHandle> CaptainPersistorException of(Exception e, long id, String stepString, ServiceHandle serviceHandle) {
     String message = String.format("handle persistor failed for request id: %s at step: %s while attempting to persist service handle: %s. quarantining request.",
-        jobId, stepString, serviceHandle
+        id, stepString, serviceHandle
     );
 
     return new CaptainPersistorException(message, e);
