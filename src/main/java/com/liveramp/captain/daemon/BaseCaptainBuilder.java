@@ -11,6 +11,7 @@ import com.liveramp.captain.notifier.CaptainDaemonInternalNotifier;
 import com.liveramp.captain.notifier.CaptainNotifier;
 import com.liveramp.captain.notifier.DefaultCaptainLoggingNotifier;
 import com.liveramp.captain.request_lock.CaptainRequestLock;
+import com.liveramp.captain.request_lock.zk_request_lock.ZkCaptainRequestLock;
 import com.liveramp.captain.retry.DefaultFailedRequestPolicy;
 import com.liveramp.captain.retry.FailedRequestPolicy;
 import com.liveramp.daemon_lib.Daemon;
@@ -43,7 +44,7 @@ public class BaseCaptainBuilder<T extends BaseCaptainBuilder<T>> {
   private boolean rammingSpeed = DEFAULT_SUPPORTS_RAMMING_SPEED;
   private CaptainNotifier notifier;
 
-  private Optional<DaemonLock> daemonConfigProductionLock = Optional.empty();
+  private Optional<DaemonLock> daemonConfigProducerLock = Optional.empty();
   private Optional<Integer> maxThreads = Optional.empty();
   private Optional<Integer> nextConfigWaitSeconds = Optional.empty();
   private Optional<Integer> configWaitSeconds = Optional.empty();
@@ -89,8 +90,14 @@ public class BaseCaptainBuilder<T extends BaseCaptainBuilder<T>> {
     return self;
   }
 
-  public T setDaemonConfigProductionLock(DaemonLock daemonConfigProductionLock) {
-    this.daemonConfigProductionLock = Optional.of(daemonConfigProductionLock);
+  public T setConfigProducerLock(DaemonLock daemonConfigProducerLock) {
+    this.daemonConfigProducerLock = Optional.of(daemonConfigProducerLock);
+
+    return self;
+  }
+
+  public T setRequestLock(CaptainRequestLock requestLock) {
+    this.requestLock = Optional.of(requestLock);
 
     return self;
   }
@@ -101,14 +108,21 @@ public class BaseCaptainBuilder<T extends BaseCaptainBuilder<T>> {
    * @param curatorFramework
    * @return
    */
-  public T setZkDaemonLock(CuratorFramework curatorFramework) {
-    setDaemonConfigProductionLock(com.liveramp.captain.daemon.CaptainZkDaemonLock.getProduction(curatorFramework, identifier));
+  public T setZkConfigProducerLock(CuratorFramework curatorFramework) {
+    setConfigProducerLock(com.liveramp.captain.daemon.CaptainZkDaemonLock.getProduction(curatorFramework, identifier));
 
     return self;
   }
 
-  public T setRequestLock(CaptainRequestLock requestLock) {
-    this.requestLock = Optional.of(requestLock);
+  public T setZkRequestLock(CuratorFramework curatorFramework) {
+    this.requestLock = Optional.of(ZkCaptainRequestLock.getProduction(curatorFramework, identifier));
+
+    return  self;
+  }
+
+  public T setZkLocks(CuratorFramework curatorFramework) {
+    setZkConfigProducerLock(curatorFramework);
+    setZkRequestLock(curatorFramework);
 
     return self;
   }
@@ -209,7 +223,7 @@ public class BaseCaptainBuilder<T extends BaseCaptainBuilder<T>> {
     configWaitSeconds.ifPresent(daemonBuilder::setConfigWaitSeconds);
     executionSlotWaitSeconds.ifPresent(daemonBuilder::setExecutionSlotWaitSeconds);
     failureWaitSeconds.ifPresent(daemonBuilder::setFailureWaitSeconds);
-    daemonConfigProductionLock.ifPresent(daemonBuilder::setDaemonConfigProductionLock);
+    daemonConfigProducerLock.ifPresent(daemonBuilder::setDaemonConfigProductionLock);
 
     Optional<JobletCallback<CaptainRequestConfig>> lockRequestCallbackOptional = generateCallbackOptionalFromRequestLockOptional(requestLock, true);
     Optional<JobletCallback<CaptainRequestConfig>> unlockRequestCallbackOptional = generateCallbackOptionalFromRequestLockOptional(requestLock, false);
