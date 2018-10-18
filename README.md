@@ -291,6 +291,49 @@ If you make it past the "Getting Started" section, you may want to understand a 
 `FAILED`: When Captain receives `FAILED` it will try to execute the retry policy (`FailedRequestPolicy`) if you provided one. Otherwise it will do nothing.
 (optional)`PENDING`: By default `PENDING` is not used. It can be turned on using `setSupportsPending` in the `CaptainBuilder`. Unless you turn it on, you can ignore this status completely. The goal of the `PENDING` status is to track the time between submitting a request to a service and the time at which that service begins processing it. For example, in our Example App, we submit a job to a service that runs a long running process. Let's say that service is frequently backlogged, so you want to poll it to find out when it actually starts working on your request. The `PENDING` status is intended to do that. When Captain receives a request in `PENDING` all it does is run the `StatusRetriever`, just like it does for requests in `IN_PROGRESS`. By convention, in your status retriever, if it finds out the request has still not begun processing, it should return `PENDING` again (i.e. no change), otherwise if it has started, it returns `IN_PROGRESS`. Note: You can only give a waypoint one `StatusRetriever`, so if you're using `PENDING`, both `PENDING` and `IN_PROGRESS` are going to use the same status retriever.
 
+#### Retry Policy (FailedRequestPolicy)
+
+In the `CaptainBuilder` you can pass in a `FailedRequestPolicy`. This interface provides you the opportunity to specify how requests should be handled. 
+
+Given the id of your request, you need to implement `getFailedRequestAction` such that it returns `RETRY`, `QUARANTINE`, or `NO_OP`. 
+`RETRY`: will call the `retry` method that you implemented in your `RequestUpdater`. (note: implementing that method is optional; if you are using retry though, you should implement it; otherwise it defaults to a no op).
+`QUARANTINE`: will call the `quarantine` method that you implemented in your `RequestUpdater`.
+`NO_OP`: will do nothing.
+
+By convention, retry policies tend to look at the updated_at on a request and then determine when it should retry (either fixed term or exponential backoff) or if it has failed too many times such that it should be quarantined. Because this relies on pretty specific request metadata, we don't provide any built in policies and you're required to implement your own.
+
+Here's an example of what it might look in the case described in our [Example App](https://github.com/LiveRamp/captain/blob/master/src/main/java/com/liveramp/captain/example/ExampleCaptainWorkflow.java) 
+
+```java
+  class ExampleFixedTermBackoffRetryPolicy implements FailedRequestPolicy {
+    private final int MAX_FAILED_ATTEMPTS = 3;
+    private final Duration TIME_BETWEEN_RETRY = Duration.ofMinutes(30);
+    private MockDb mockDb;
+
+    public ExampleFixedTermBackoffRetryPolicy(MockDb mockDb) {
+      this.mockDb = mockDb;
+    }
+
+    @Override
+    public FailedRequestAction getFailedRequestAction(Long id) {
+      MockRequest request = mockDb.getRequest(id);
+      int numFailedAttempts = request.attempts;
+      long lastUpdatedAt = request.updatedAt;
+      
+      if(numFailedAttempts > MAX_FAILED_ATTEMPTS) {
+        return FailedRequestAction.QUARANTINE;
+      }
+      
+      if(lastUpdatedAt > System.currentTimeMillis() - TIME_BETWEEN_RETRY.toMillis()) {
+        return FailedRequestAction.RETRY;
+      } else {
+        return FailedRequestAction.NO_OP;
+      }
+      return null;
+    }
+  }
+```
+
 #### Emulating a DAG
 
 When people think of a workflow-engine, they think of a DAG. Captain grew organically out of a few products at LiveRamp that really only required linear workflows (even if at the time they were represented by complicated DAGs). Due to this pedigree, Captain is opinionated towards linear workflows to enforce building simple workflows. Thus DAGs are not first-class citizens in Captain. Probably the biggest roadblock for DAG's feeling at home within Captain is that choice that it leaves the entire persistence layer to the consumer. Persisting the state of a DAG is simply more complex than persisting the state of a linear workflow. Captain was not really built with the DAG in mind, though you can emulate it using Captain. I hypothesize there are some significant infrastructure hurdles (that are certainly solvable) to making it such that DAGs are easy to use in Captain. That being said, let's talk about how you can emulate a DAG in Captain today. 
