@@ -7,7 +7,7 @@ public class NoOpHandlePersistor<ServiceHandle> implements HandlePersistor<Servi
   }
 
   @Override
-  public void persist(Long jobId, ServiceHandle o) {
+  public void persist(Long id, ServiceHandle o) {
 
   }
 

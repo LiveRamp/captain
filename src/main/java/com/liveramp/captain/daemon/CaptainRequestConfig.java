@@ -17,7 +17,7 @@ public abstract class CaptainRequestConfig implements JobletConfig {
   @Override
   public String toString() {
     return "CaptainRequestConfig{" +
-        "jobId=" + getId() +
+        "id=" + getId() +
         ",status=" + getStatus() +
         ",step=" + getStep() +
         ",appType=" + getAppType() +
