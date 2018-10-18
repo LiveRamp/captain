@@ -82,7 +82,7 @@ Create a class that implements `CaptainConfigProducer`. This is your opportunity
 
 e.g. If I store my requests in a db table, I'll be looking for requests that have a status of `ready`, `pending`, `in_progress` or `completed` that are not in a step of `done` or `cancelled`. Usually you're going to ignore requests that are `quarantined` or `failed` or requests that you've already completed processing (e.g. step: `done` or `cancelled`). If you've implemented a retry policy with `FailedRequestPolicy` then you should still pick up requests in a `failed` status.
 
-Check out [ExampleConfigProducer](https://github.com/LiveRamp/captain/tree/master/src/main/java/com/liveramp/captain/exception/ExampleCaptainWorkflow.java) for a simple example.
+Check out [ExampleConfigProducer](https://github.com/LiveRamp/captain/blob/master/src/main/java/com/liveramp/captain/example/ExampleCaptainWorkflow.java#L141-L168) for a simple example.
 
 #### Request Updater
 
@@ -90,7 +90,7 @@ Create a class that implements `RequestUpdater` iface. The Request Updater is yo
 
 In the case where you're interacting with a db or crud service, you're implementing pretty orthodox state changes like `setStatus`, `setStepAndStatus`, `quarantine`, etc.
 
-Check out [ExampleRequestUpdater](https://github.com/LiveRamp/captain/tree/master/src/main/java/com/liveramp/captain/exception/ExampleCaptainWorkflow.java) for an example.
+Check out [ExampleRequestUpdater](https://github.com/LiveRamp/captain/blob/master/src/main/java/com/liveramp/captain/example/ExampleCaptainWorkflow.java#L170-L196) for an example.
 
 #### Manifest
 
@@ -110,7 +110,7 @@ For each Waypoint you provide Captain with an implementation of how it should ex
 ###### Request Submitter
 
 Implementing `CaptainRequestSubmitter` allows you to tell a Captain Waypoint how to build a config and then submit it. It takes in the id of your request, and it optionally returns a request handle (which will be explained in the next section)
-An example can be found here in [MapReduceJobSubmitter](https://github.com/LiveRamp/captain/tree/master/src/main/java/com/liveramp/captain/exception/ExampleCaptainWorkflow.java).
+An example can be found here in [MapReduceJobSubmitter](https://github.com/LiveRamp/captain/blob/master/src/main/java/com/liveramp/captain/example/ExampleCaptainWorkflow.java#L220-L237).
 
 A pretty common pattern for a Submitter is that it will build a config by pulling information out of the db or talking to previously used services before submitting it to some new service.
 
@@ -118,7 +118,7 @@ A pretty common pattern for a Submitter is that it will build a config by pullin
 
 Implementing `CaptainHandlePersistor` allows you to instruct Captain on how to save the id (or request handle) for the work that it triggered in the request submitter. It takes in a request handle and does not return anything. 
 
-e.g. When one submits a request to the analytics service for it to kick off a spark job to do some analysis, the service returns a job id, so that the progress of that request may be tracked. The handler persistor allows the user to save that handle as they see fit. Here's a code An example can be found here in [MapReduceJobHandlePersistor](https://github.com/LiveRamp/captain/tree/master/src/main/java/com/liveramp/captain/exception/ExampleCaptainWorkflow.java).
+e.g. When one submits a request to the analytics service for it to kick off a spark job to do some analysis, the service returns a job id, so that the progress of that request may be tracked. The handler persistor allows the user to save that handle as they see fit. Here's a code An example can be found here in [MapReduceJobHandlePersistor](https://github.com/LiveRamp/captain/blob/master/src/main/java/com/liveramp/captain/example/ExampleCaptainWorkflow.java#L239-L251).
 
 This class is not required in any Captain waypoint. If you do not need to track the request id of your work, you don't need to implement this class. If this is the case, you can just have your Request Submitter return null as it won't be read anywhere else.
 
@@ -207,13 +207,13 @@ e.g. Quarantine a request that is misconfigured.
 
 ##### Manifest Example
 
-Here's an [example](https://github.com/LiveRamp/captain/tree/master/src/main/java/com/liveramp/captain/exception/ExampleCaptainWorkflow.java) of a complete Manifest as constructed from the components described above.
+Here's an [example](https://github.com/LiveRamp/captain/blob/master/src/main/java/com/liveramp/captain/example/ExampleCaptainWorkflow.java#L79-L118) of a complete Manifest as constructed from the components described above.
 
 ##### Processing Multiple Manifests
 
 Captain allows you to have a single Captain instance process a single manifest (e.g. all of your requests follow the exact same path) using `SingleAppManifestManager`. It also allows for a single instance to process multiple manifests (`MultiAppManifestManager`). This choice allows for separation of concerns and hardware as desired by the developer. Spinning up multiple Captain instances is not frictionless, but it does give a better guarantee that one pipeline won't affect another.
 
-By providing an app type to captain and a map of app types to manifests, Captain handles multiple manifests. Here's an [example](https://github.com/LiveRamp/captain/tree/master/src/main/java/com/liveramp/captain/exception/ExampleCaptainWorkflow.java).
+By providing an app type to captain and a map of app types to manifests, Captain handles multiple manifests. Here's an [example](https://github.com/LiveRamp/captain/blob/master/src/main/java/com/liveramp/captain/example/ExampleCaptainWorkflow.java#L114-L118).
 
 Captain currently forces you to use one of the two provided ManifestManagers: `SingleAppManifestManager` or `MultiAppManifestManager`. These provide convenient but light-weight abstractions for handling manifests.  
 
@@ -302,7 +302,7 @@ Given the id of your request, you need to implement `getFailedRequestAction` suc
 
 By convention, retry policies tend to look at the updated_at on a request and then determine when it should retry (either fixed term or exponential backoff) or if it has failed too many times such that it should be quarantined. Because this relies on pretty specific request metadata, we don't provide any built in policies and you're required to implement your own.
 
-Here's an example of what it might look in the case described in our [Example App](https://github.com/LiveRamp/captain/blob/master/src/main/java/com/liveramp/captain/example/ExampleCaptainWorkflow.java) 
+Here's an example of what it might look in the case described in our [Example App]() 
 
 ```java
   class ExampleFixedTermBackoffRetryPolicy implements FailedRequestPolicy {
