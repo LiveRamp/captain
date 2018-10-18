@@ -72,7 +72,7 @@ CaptainBuilder.of("example-captain-daemon", configProducer, manifestManager, req
         .build()
         .run();
 ```
-You can find the rest of this example in ExampleCaptainWorkflow](https://github.com/LiveRamp/captain/tree/master/src/main/java/com/liveramp/captain/exception/ExampleCaptainWorkflow.java).
+[You can find the rest of this example in ExampleCaptainWorkflow](https://github.com/LiveRamp/captain/tree/master/src/main/java/com/liveramp/captain/exception/ExampleCaptainWorkflow.java).
 
 Let's walk through what each of the components we're passing into this builder are.
 
@@ -88,7 +88,7 @@ Check out [ExampleConfigProducer](https://github.com/LiveRamp/captain/tree/maste
 
 Create a class that implements `RequestUpdater` iface. The Request Updater is your opportunity to tell Captain how it can change the step and status on your request. 
 
-In the case where you're interacting with a db or crud service, you're implementing pretty state changes like `setStatus`, `setStepAndStatus`, `quarantine`, etc.
+In the case where you're interacting with a db or crud service, you're implementing pretty orthodox state changes like `setStatus`, `setStepAndStatus`, `quarantine`, etc.
 
 Check out [ExampleRequestUpdater](https://github.com/LiveRamp/captain/tree/master/src/main/java/com/liveramp/captain/exception/ExampleCaptainWorkflow.java) for an example.
 
@@ -158,7 +158,7 @@ This Waypoint is designed for:
 
 It accepts a Status Retriever only. Here are a couple examples of how it could be used:
 
-e.g. Hold the request until the PO has completed configuration of the CustomerLinkAccount.
+e.g. Hold the request until the file is ready to be processed.
 ```java
   class IngestionComplete implements StatusRetriever {
 
@@ -246,7 +246,7 @@ A `DaemonLock` is a lock that is designed to guarantee that the config producers
 
 A `RequestLock` is a request level lock. It allows you to guarantee that no other node tries to pick up a node that you're currently processing. After the daemon lock releases, you still don't want another node to pull your request out of the db.
 
-If you already work with Zookkeeper, you can use Captain's built-in locks. Call `setZkLocks` in `CaptainBuilder` and pass in your Zk `CuratorFramework`. Captain will do the rest.
+If you already work with Zookkeeper, you can use Captain's built-in locks. Call `setZkLocks` in `CaptainBuilder` and pass in your Zookkeeper `CuratorFramework`. Captain will do the rest.
 
 If you have your own locking toolset, the provided interfaces should provide a pretty easy guide to plugging it into Captain.
 
