@@ -20,6 +20,7 @@ import com.liveramp.daemon_lib.JobletCallback;
 import com.liveramp.daemon_lib.builders.ThreadingDaemonBuilder;
 import com.liveramp.daemon_lib.utils.JobletCallbackUtil;
 
+@SuppressWarnings({"OptionalUsedAsFieldOrParameterType, WeakerAccess", "UnusedReturnValue", "unused"})
 public class BaseCaptainBuilder<T extends BaseCaptainBuilder<T>> {
 
   /**
@@ -29,7 +30,7 @@ public class BaseCaptainBuilder<T extends BaseCaptainBuilder<T>> {
    * by handling this in an instance variable as opposed to an abstract method, we avoid making the extender having
    * to worry about implementing a "get self" method.
    */
-  @SuppressWarnings("unchecked")
+  @SuppressWarnings({"unchecked", "WeakerAccess"})
   protected final T self = (T)this;
 
   private boolean DEFAULT_SUPPORTS_PENDING = false;
@@ -40,7 +41,9 @@ public class BaseCaptainBuilder<T extends BaseCaptainBuilder<T>> {
   private final ManifestManager manifestManager;
   private final RequestUpdater requestUpdater;
 
+  @SuppressWarnings("ConstantConditions")
   private boolean supportsPending = DEFAULT_SUPPORTS_PENDING;
+  @SuppressWarnings("ConstantConditions")
   private boolean rammingSpeed = DEFAULT_SUPPORTS_RAMMING_SPEED;
   private CaptainNotifier notifier;
 
@@ -64,6 +67,11 @@ public class BaseCaptainBuilder<T extends BaseCaptainBuilder<T>> {
     this.requestUpdater = requestUpdater;
   }
 
+  /**
+   * Allows you to specify how Captain should handle failed requests.
+   * @param failedRequestPolicy retry and quarantine policy that implements FailedRequestPolicy
+   * @return self
+   */
   public T setFailedRequestPolicy(FailedRequestPolicy failedRequestPolicy) {
     this.failedRequestPolicy = failedRequestPolicy;
     return self;
@@ -71,6 +79,9 @@ public class BaseCaptainBuilder<T extends BaseCaptainBuilder<T>> {
 
   /**
    * BETA
+   * Allows Captain to skip running the config producer again for your request, if it thinks it can just execute the next step of the state machine immediately.
+   * @param rammingSpeed, defaults to false
+   * @return self
    */
   public T setRammingSpeed(boolean rammingSpeed) {
     this.rammingSpeed = rammingSpeed;
@@ -78,24 +89,44 @@ public class BaseCaptainBuilder<T extends BaseCaptainBuilder<T>> {
     return self;
   }
 
+  /**
+   * Adds a notifier that handles where logging is output to and formatting thereof.
+   * @param notifier, implements CaptainNotifier specifying output and formatting of logs.
+   * @return self
+   */
   public T setNotifier(CaptainNotifier notifier) {
     this.notifier = notifier;
 
     return self;
   }
 
+  /**
+   * Turns on ability to track when an async step has started processing a request.
+   * @param supportsPending, defaults to false
+   * @return self
+   */
   public T setSupportsPending(boolean supportsPending) {
     this.supportsPending = supportsPending;
 
     return self;
   }
 
+  /**
+   * Sets a lock so that no two instances of Captain try to pull in new requests to process at the same time. See the README for more context ("Running Captain in a Distributed Fashion").
+   * @param daemonConfigProducerLock implements DaemonLock
+   * @return self
+   */
   public T setConfigProducerLock(DaemonLock daemonConfigProducerLock) {
     this.daemonConfigProducerLock = Optional.of(daemonConfigProducerLock);
 
     return self;
   }
 
+  /**
+   * Sets a lock so that no other instance of Captain tries to process a request until the instance that has "claimed" it finishes using it. See the README for more context ("Running Captain in a Distributed Fashion").
+   * @param requestLock implements CaptainRequestLock
+   * @return self
+   */
   public T setRequestLock(CaptainRequestLock requestLock) {
     this.requestLock = Optional.of(requestLock);
 
@@ -103,10 +134,9 @@ public class BaseCaptainBuilder<T extends BaseCaptainBuilder<T>> {
   }
 
   /**
-   * built-in: if you have a zookeeper cluster you can point to, we can handle the locking infra for you.
-   *
-   * @param curatorFramework
-   * @return
+   * built-in: if you have a zookeeper cluster you can point to, we can handle the config producer lock for you.  See the README for more context ("Running Captain in a Distributed Fashion").
+   * @param curatorFramework as instantiated from the Apache Curator project
+   * @return self
    */
   public T setZkConfigProducerLock(CuratorFramework curatorFramework) {
     setConfigProducerLock(com.liveramp.captain.daemon.CaptainZkDaemonLock.getProduction(curatorFramework, identifier));
@@ -114,12 +144,22 @@ public class BaseCaptainBuilder<T extends BaseCaptainBuilder<T>> {
     return self;
   }
 
+  /**
+   * built-in: if you have a zookeeper cluster you can point to, we can handle the request lock for you.  See the README for more context ("Running Captain in a Distributed Fashion").
+   * @param curatorFramework as instantiated from the Apache Curator project
+   * @return self
+   */
   public T setZkRequestLock(CuratorFramework curatorFramework) {
     this.requestLock = Optional.of(ZkCaptainRequestLock.getProduction(curatorFramework, identifier));
 
-    return  self;
+    return self;
   }
 
+  /**
+   * built-in: if you have a zookeeper cluster you can point to, we can handle the locking infra for you.  See the README for more context ("Running Captain in a Distributed Fashion").
+   * @param curatorFramework as instantiated from the Apache Curator project
+   * @return self
+   */
   public T setZkLocks(CuratorFramework curatorFramework) {
     setZkConfigProducerLock(curatorFramework);
     setZkRequestLock(curatorFramework);
@@ -127,6 +167,10 @@ public class BaseCaptainBuilder<T extends BaseCaptainBuilder<T>> {
     return self;
   }
 
+  /**
+   * sets max number of threads a captain node will run at once. each thread can handle one request at a time.
+   * @return self
+   */
   public T setMaxThreads(int maxThreads) {
     this.maxThreads = Optional.of(maxThreads);
 
@@ -135,9 +179,7 @@ public class BaseCaptainBuilder<T extends BaseCaptainBuilder<T>> {
 
   /**
    * wait time after last config provided
-   *
-   * @param nextConfigWaitTime
-   * @return
+   * @return self
    */
   public T setNextConfigWaitTime(int nextConfigWaitTime, TimeUnit unit) {
     this.nextConfigWaitSeconds = Optional.of(Math.toIntExact(unit.toSeconds(nextConfigWaitTime)));
@@ -147,9 +189,7 @@ public class BaseCaptainBuilder<T extends BaseCaptainBuilder<T>> {
 
   /**
    * wait time when no config found
-   *
-   * @param configWaitTime
-   * @return
+   * @return self
    */
   public T setConfigWaitTime(int configWaitTime, TimeUnit unit) {
     this.configWaitSeconds = Optional.of(Math.toIntExact(unit.toSeconds(configWaitTime)));
@@ -159,9 +199,7 @@ public class BaseCaptainBuilder<T extends BaseCaptainBuilder<T>> {
 
   /**
    * wait time when all execution slots were full
-   *
-   * @param executionSlotWaitTime
-   * @return
+   * @return self
    */
   public T setExecutionSlotWaitTime(int executionSlotWaitTime, TimeUnit unit) {
     this.executionSlotWaitSeconds = Optional.of(Math.toIntExact(unit.toSeconds(executionSlotWaitTime)));
@@ -171,9 +209,7 @@ public class BaseCaptainBuilder<T extends BaseCaptainBuilder<T>> {
 
   /**
    * wait time after failure
-   *
-   * @param failureWaitTime
-   * @return
+   * @return self
    */
   public T setFailureWaitTime(int failureWaitTime, TimeUnit unit) {
     this.failureWaitSeconds = Optional.of(Math.toIntExact(unit.toSeconds(failureWaitTime)));
@@ -181,24 +217,41 @@ public class BaseCaptainBuilder<T extends BaseCaptainBuilder<T>> {
     return self;
   }
 
+  /**
+   * user-provided callback, triggered when captain finds a request to process.
+   * @return self
+   */
   public T setOnNewConfigCallback(JobletCallback<CaptainRequestConfig> onNewConfigCallback) {
     this.onNewConfigCallback = Optional.of(onNewConfigCallback);
 
     return self;
   }
 
+  /**
+   * user-provided callback, triggered when captain finishes one run of the state machine.
+   * @return self
+   */
   public T setSuccessCallback(JobletCallback<CaptainRequestConfig> successCallback) {
     this.successCallback = Optional.of(successCallback);
 
     return self;
   }
 
+  /**
+   * user-provided callback, triggered when a run of the captain state machine fails.
+   * @return self
+   */
   public T setFailureCallback(JobletCallback<CaptainRequestConfig> failureCallback) {
     this.failureCallback = Optional.of(failureCallback);
 
     return self;
   }
 
+  /**
+   * builds a captain instance
+   * @return - an instance of captain
+   */
+  @SuppressWarnings("ConstantConditions")
   public Daemon<CaptainRequestConfig> build() throws IllegalAccessException, IOException, InstantiationException {
     CaptainNotifier resolvedCaptainNotifier = notifier != null ? notifier : new DefaultCaptainLoggingNotifier();
 
@@ -250,6 +303,7 @@ public class BaseCaptainBuilder<T extends BaseCaptainBuilder<T>> {
     }
   }
 
+  @SuppressWarnings("OptionalIsPresent")
   private Optional<JobletCallback<CaptainRequestConfig>> composeRequestLockCallbackAndOtherCallbacks(Optional<JobletCallback<CaptainRequestConfig>> requestLock, Optional<JobletCallback<CaptainRequestConfig>> callback) {
     if (requestLock.isPresent() && callback.isPresent()) {
       return Optional.of(JobletCallbackUtil.compose(requestLock.get(), callback.get()));
