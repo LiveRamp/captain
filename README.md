@@ -78,9 +78,9 @@ Let's walk through what each of the components we're passing into this builder a
 
 #### Config Producer
 
-Create a class the implements `CaptainConfigProducer`. This is your opportunity to tell Captain how to find requests to process. Commonly this will just be a db query to wherever you store requests or reading from some sort of event queue. Regardless of the implementation you're trying to pull the requests that are (or may be) ready to progress in your pipeline.
+Create a class that implements `CaptainConfigProducer`. This is your opportunity to tell Captain how to find requests to process. Commonly this will just be a db query to wherever you store requests or read from some sort of event queue. Regardless of the implementation, you're trying to pull the requests that are (or may be) ready to progress in your pipeline.
 
-e.g. If I store my requests in a db table, I'll be looking for requests that have a status of `ready`, `pending`, `in_progress` or `completed` that are not in a step of `done` or `cancelled`. Usually you're going to ignore requests that are `quarantined` or `failed` or requests that you've already completed processing (e.g. step: `done` or `cancelled`).
+e.g. If I store my requests in a db table, I'll be looking for requests that have a status of `ready`, `pending`, `in_progress` or `completed` that are not in a step of `done` or `cancelled`. Usually you're going to ignore requests that are `quarantined` or `failed` or requests that you've already completed processing (e.g. step: `done` or `cancelled`). If you've implemented a retry policy with `FailedRequestPolicy` then you should still pick up requests in a `failed` status.
 
 Check out [ExampleConfigProducer](https://github.com/LiveRamp/captain/tree/master/src/main/java/com/liveramp/captain/exception/ExampleCaptainWorkflow.java) for a simple example.
 
@@ -205,11 +205,9 @@ e.g. Quarantine a request that is misconfigured.
   }
 ```
 
-
 ##### Manifest Example
 
 Here's an [example](https://github.com/LiveRamp/captain/tree/master/src/main/java/com/liveramp/captain/exception/ExampleCaptainWorkflow.java) of a complete Manifest as constructed from the components described above.
-
 
 ##### Processing Multiple Manifests
 
@@ -274,7 +272,6 @@ Whenever you initialize that submitter, you need to already have the service cli
 
 Letting you pass in factories is a handy way to avoid this, since when calling `create` you would just initialize the factories and not the underlying object. But still, depending on how you initialize submitters/status retrievers/ handle persistors using factories might not be necessary. Especially if you're trying to share connections across waypoints or manifests, you may push the depedency up your hierarchy in which case the factory is less likely to be valuable. Do what works for your infra.
 
-
 ### Gotchas, Notes on the Iface, Miscellania
 
 - Captain is a busy loop. Be careful what you log. You can very quickly nuke your inbox or your disk.
@@ -283,6 +280,16 @@ Letting you pass in factories is a handy way to avoid this, since when calling `
 - parallelExecutions: num of requests a captain node should process in parallel. (5 - 20 appears to be pretty conventional. Ideally each time Captain "processes" (meaning any single waypoint) a request the amount of works its doing should take less than a second. So even 5 threads can move you through requests very quickly) 
 
 Did you know Captain is a busy loop?
+
+#### Captain Under the Hood
+
+If you make it past the "Getting Started" section, you may want to understand a bit more explicitly Captain's state machine logic. The best thing would be to check out [CaptainJoblet](https://github.com/LiveRamp/captain/blob/master/src/main/java/com/liveramp/captain/daemon/CaptainJoblet.java), but we'll do a brief primer on it in this section.
+
+`READY`: When Captain encounters a request in this status, it is going try to run the `RequestSubmitter` for the step that it's currently in. If you have provided a `HandlePersistor` for that step, it will run that as well. Assuming that no exception is thrown while executing these classes, it will then change the status of the request, using the `RequestUpdater`, to `COMPLETED` if it's a Sync Waypoint or `IN_PROGRESS` if it's a ASync or ControlFlow waypoint .
+`IN_PROGRESS`: Captain will run the `StatusRetriever` for a given step when it receives `IN_PROGRESS`. The `StatusRetriever` will return the `CaptainStatus` that you chose in your implementation. Based on that status, on the next run of the state machine, Captain will act according to the rules described in this section.
+`COMPLETED`: When the state machines encounters a request in `COMPLETED`, it will try to find the next step in the manifest. If it finds a next step, it will change both the step to the next step and status from `COMPLETED` to ready using the request updater.
+`FAILED`: When Captain receives `FAILED` it will try to execute the retry policy (`FailedRequestPolicy`) if you provided one. Otherwise it will do nothing.
+(optional)`PENDING`: By default `PENDING` is not used. It can be turned on using `setSupportsPending` in the `CaptainBuilder`. Unless you turn it on, you can ignore this status completely. The goal of the `PENDING` status is to track the time between submitting a request to a service and the time at which that service begins processing it. For example, in our Example App, we submit a job to a service that runs a long running process. Let's say that service is frequently backlogged, so you want to poll it to find out when it actually starts working on your request. The `PENDING` status is intended to do that. When Captain receives a request in `PENDING` all it does is run the `StatusRetriever`, just like it does for requests in `IN_PROGRESS`. By convention, in your status retriever, if it finds out the request has still not begun processing, it should return `PENDING` again (i.e. no change), otherwise if it has started, it returns `IN_PROGRESS`. Note: You can only give a waypoint one `StatusRetriever`, so if you're using `PENDING`, both `PENDING` and `IN_PROGRESS` are going to use the same status retriever.
 
 #### Emulating a DAG
 

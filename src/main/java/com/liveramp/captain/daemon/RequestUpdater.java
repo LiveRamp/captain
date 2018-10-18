@@ -8,11 +8,9 @@ public interface RequestUpdater {
 
   void setStepAndStatus(long id, CaptainStep currentStep, CaptainStatus currentStatus, CaptainStep newStep, CaptainStatus newStatus);
 
-
   void cancel(long id);
 
   void fail(long id);
-
 
   default void retry(long id) {
 
