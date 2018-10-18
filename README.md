@@ -17,7 +17,7 @@ To this end, here are the goals of Captain:
 
 How is Captain different from other workflow engines?
 1. Captain relies on you to handle your persistence of a request and its metadata. You don't have to set up special DB for captain. For some this will be really valuable and others it will be a deal breaker.
-2. Captain is really easy to set up. We've provided an [ExampleCaptainWorkflow](https://github.com/LiveRamp/captain/tree/master/src/main/java/com/liveramp/captain/exception/ExampleCaptainWorkflow.java)
+2. Captain is really easy to set up. We've provided an [ExampleCaptainWorkflow](https://github.com/LiveRamp/captain/tree/master/src/main/java/com/liveramp/captain/example/ExampleCaptainWorkflow.java)
 3. Like [daemon_lib](https://github.com/LiveRamp/daemon_lib), the core library has no infrastructure dependencies beyond access to a working directory on disk.
 4. It's opinionated towards linear workflows. 
 
@@ -72,7 +72,7 @@ CaptainBuilder.of("example-captain-daemon", configProducer, manifestManager, req
         .build()
         .run();
 ```
-[You can find the rest of this example in ExampleCaptainWorkflow](https://github.com/LiveRamp/captain/tree/master/src/main/java/com/liveramp/captain/exception/ExampleCaptainWorkflow.java).
+[You can find the rest of this example in ExampleCaptainWorkflow](https://github.com/LiveRamp/captain/tree/master/src/main/java/com/liveramp/captain/example/ExampleCaptainWorkflow.java).
 
 Let's walk through what each of the components we're passing into this builder are.
 
