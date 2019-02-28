@@ -1,5 +1,6 @@
 package com.liveramp.captain.daemon;
 
+import com.liveramp.daemon_lib.DaemonCallback;
 import java.io.IOException;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
@@ -58,6 +59,7 @@ public class BaseCaptainBuilder<T extends BaseCaptainBuilder<T>> {
   private Optional<JobletCallback<CaptainRequestConfig>> onNewConfigCallback = Optional.empty();
   private Optional<JobletCallback<CaptainRequestConfig>> successCallback = Optional.empty();
   private Optional<JobletCallback<CaptainRequestConfig>> failureCallback = Optional.empty();
+  private Optional<DaemonCallback> wakeUpCallback = Optional.empty();
   private FailedRequestPolicy failedRequestPolicy = new DefaultFailedRequestPolicy();
 
   protected BaseCaptainBuilder(String identifier, CaptainConfigProducer configProducer, ManifestManager manifestManager, RequestUpdater requestUpdater) {
@@ -247,6 +249,12 @@ public class BaseCaptainBuilder<T extends BaseCaptainBuilder<T>> {
     return self;
   }
 
+  public T setWakeUpCallback(DaemonCallback wakeUpCallback) {
+    this.wakeUpCallback = Optional.of(wakeUpCallback);
+
+    return self;
+  }
+
   /**
    * builds a captain instance
    * @return - an instance of captain
@@ -287,6 +295,8 @@ public class BaseCaptainBuilder<T extends BaseCaptainBuilder<T>> {
         .ifPresent(daemonBuilder::setSuccessCallback);
     composeRequestLockCallbackAndOtherCallbacks(unlockRequestCallbackOptional, failureCallback)
         .ifPresent(daemonBuilder::setFailureCallback);
+
+    wakeUpCallback.ifPresent(daemonBuilder::setWakeUpCallback);
 
     return daemonBuilder.build();
   }
