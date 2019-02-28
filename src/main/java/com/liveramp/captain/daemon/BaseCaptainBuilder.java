@@ -249,6 +249,10 @@ public class BaseCaptainBuilder<T extends BaseCaptainBuilder<T>> {
     return self;
   }
 
+  /**
+   * user-provided callback, triggered whenever the captain daemon wakes up to look for new requests
+   * @return self
+   */
   public T setWakeUpCallback(DaemonCallback wakeUpCallback) {
     this.wakeUpCallback = Optional.of(wakeUpCallback);
 
@@ -296,6 +300,7 @@ public class BaseCaptainBuilder<T extends BaseCaptainBuilder<T>> {
     composeRequestLockCallbackAndOtherCallbacks(unlockRequestCallbackOptional, failureCallback)
         .ifPresent(daemonBuilder::setFailureCallback);
 
+    // wakeUpCallback happens outside of request locking, so it need not be composed
     wakeUpCallback.ifPresent(daemonBuilder::setWakeUpCallback);
 
     return daemonBuilder.build();
