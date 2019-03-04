@@ -7,9 +7,21 @@ import org.slf4j.LoggerFactory;
 public class DefaultCaptainLoggingNotifier implements CaptainNotifier {
   private static final Logger LOG = LoggerFactory.getLogger(DefaultCaptainLoggingNotifier.class);
 
-
   private void notifyInternal(String subject, String body, NotificationLevel notificationLevel) {
-    LOG.info(String.format("[%s]: %s %n%n %s)", notificationLevel.toString(), subject, body));
+    String msg = String.format("[%s]: %s %n%n %s)", notificationLevel.toString(), subject, body);
+    switch (notificationLevel) {
+      case DEBUG:
+        LOG.debug(msg);
+        break;
+      case INFO:
+        LOG.info(msg);
+        break;
+      case ERROR:
+        LOG.error(msg);
+        break;
+      default:
+        throw new RuntimeException("Unknown notification level: " + notificationLevel);
+    }
   }
 
   @Override
