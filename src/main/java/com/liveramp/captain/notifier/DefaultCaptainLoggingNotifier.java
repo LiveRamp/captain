@@ -20,7 +20,7 @@ public class DefaultCaptainLoggingNotifier implements CaptainNotifier {
         LOG.error(msg);
         break;
       default:
-        throw new RuntimeException("Unknown notification leve: " + notificationLevel);
+        throw new RuntimeException("Unknown notification level: " + notificationLevel);
     }
   }
 
