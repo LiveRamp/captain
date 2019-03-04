@@ -12,10 +12,15 @@ public class DefaultCaptainLoggingNotifier implements CaptainNotifier {
     switch (notificationLevel) {
       case DEBUG:
         LOG.debug(msg);
+        break;
       case INFO:
         LOG.info(msg);
+        break;
       case ERROR:
         LOG.error(msg);
+        break;
+      default:
+        throw new RuntimeException("Unknown notification leve: " + notificationLevel);
     }
   }
 
