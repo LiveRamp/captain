@@ -15,9 +15,10 @@ public class CaptainDaemonInternalNotifier implements DaemonNotifier {
 
   @Override
   public void notify(
-      String subject, Optional<String> body, Optional<? extends Throwable> t) {
+      String subject, Optional<String> body, Optional<? extends Throwable> t
+  ) {
     if (t.isPresent()) {
-      notifier.notify(subject, body.orElse(""), t.get(), CaptainNotifier.NotificationLevel.INFO);
+      notifier.notify(subject, body.orElse(""), t.get(), CaptainNotifier.NotificationLevel.ERROR);
     } else {
       notifier.notify(subject, body.orElse(""), CaptainNotifier.NotificationLevel.INFO);
     }
