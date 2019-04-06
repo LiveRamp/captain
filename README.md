@@ -41,12 +41,12 @@ In Maven, make your project section look like this:
 
   <repositories>
     <repository>
-      <id>sonatype-snapshots</id>
+      <id>maven-snapshots</id>
       <url>http://oss.sonatype.org/content/repositories/snapshots</url>
       <layout>default</layout>
-      <releases>
-        <enabled>false</enabled>
-      </releases>
+        <releases>
+          <enabled>false</enabled>
+        </releases>
       <snapshots>
         <enabled>true</enabled>
         <updatePolicy>always</updatePolicy>
