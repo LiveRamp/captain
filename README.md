@@ -1,7 +1,8 @@
-Captain
-============
+# Captain
 
->  O Captain! my Captain! our fearful trip is done!   
+[![Build Status](https://api.travis-ci.com/LiveRamp/captain.svg?branch=master)](https://travis-ci.com/LiveRamp/captain)
+
+>  O Captain! my Captain! our fearful trip is done!
 >  -- Walt Whitman, "O Captain! My Captain!"
 
 ### Overview
@@ -19,7 +20,7 @@ How is Captain different from other workflow engines?
 1. Captain relies on you to handle your persistence of a request and its metadata. You don't have to set up special DB for captain. For some this will be really valuable and others it will be a deal breaker.
 2. Captain is really easy to set up. We've provided an [ExampleCaptainWorkflow](https://github.com/LiveRamp/captain/tree/master/src/main/java/com/liveramp/captain/example/ExampleCaptainWorkflow.java)
 3. Like [daemon_lib](https://github.com/LiveRamp/daemon_lib), the core library has no infrastructure dependencies beyond access to a working directory on disk.
-4. It's opinionated towards linear workflows. 
+4. It's opinionated towards linear workflows.
 
 ### Adding the dependency
 
@@ -40,9 +41,12 @@ In Maven, make your project section look like this:
 
   <repositories>
     <repository>
-      <id>liveramp-repositories</id>
-      <name>Liveramp Repositories</name>
-      <url>http://repository.liveramp.com/artifactory/liveramp-repositories</url>
+      <id>maven-snapshots</id>
+      <url>http://oss.sonatype.org/content/repositories/snapshots</url>
+      <layout>default</layout>
+        <releases>
+          <enabled>false</enabled>
+        </releases>
       <snapshots>
         <enabled>true</enabled>
         <updatePolicy>always</updatePolicy>
@@ -58,8 +62,8 @@ The repository section is necessary because this project has not been published 
 
 Captain requires only 3 inputs from the developer (4 if you are running it in a distributed fashion). We're going to focus on the barest bones approach in this section of to see how we can run Captain on a single node. In later sections we cover all of the other features of Captain and discuss more complicated use cases.
 
-1. manifest: a list of the steps a request should follow in your workflow 
-2. config producer: a way for captain to find requests to process 
+1. manifest: a list of the steps a request should follow in your workflow
+2. config producer: a way for captain to find requests to process
 3. request updater: a way for captain to interact with your persistence layer
 
 All it takes to get Captain running is the following:
@@ -86,7 +90,7 @@ Check out [ExampleConfigProducer](https://github.com/LiveRamp/captain/blob/maste
 
 #### Request Updater
 
-Create a class that implements `RequestUpdater` iface. The Request Updater is your opportunity to tell Captain how it can change the step and status on your request. 
+Create a class that implements `RequestUpdater` iface. The Request Updater is your opportunity to tell Captain how it can change the step and status on your request.
 
 In the case where you're interacting with a db or crud service, you're implementing pretty orthodox state changes like `setStatus`, `setStepAndStatus`, `quarantine`, etc.
 
@@ -101,7 +105,7 @@ e.g.
 waypoint 1: ingest and parse data
 waypoint 2: run analysis on data (let's say this calls some service to kick off a map-reduce job)
 waypoint 3: report on output of analysis
-``` 
+```
 
 ##### Waypoint Components
 
@@ -116,7 +120,7 @@ A pretty common pattern for a Submitter is that it will build a config by pullin
 
 ###### Handle Persistor
 
-Implementing `CaptainHandlePersistor` allows you to instruct Captain on how to save the id (or request handle) for the work that it triggered in the request submitter. It takes in a request handle and does not return anything. 
+Implementing `CaptainHandlePersistor` allows you to instruct Captain on how to save the id (or request handle) for the work that it triggered in the request submitter. It takes in a request handle and does not return anything.
 
 e.g. When one submits a request to the analytics service for it to kick off a spark job to do some analysis, the service returns a job id, so that the progress of that request may be tracked. The handler persistor allows the user to save that handle as they see fit. Here's a code An example can be found here in [MapReduceJobHandlePersistor](https://github.com/LiveRamp/captain/blob/master/src/main/java/com/liveramp/captain/example/ExampleCaptainWorkflow.java#L239-L251).
 
@@ -144,16 +148,16 @@ note: "submits work to a service" technically your waypoint can just do work in 
 
 This Wayoint submits work to a service, and then, as long as the submission of that work does not fail, moves the request on to the next step in your manifest.
 
-It accepts a Request Submitter. 
+It accepts a Request Submitter.
 
-It optionally accepts a Handle Persistor, in the case where you want to save a request id, but don't want to wait for that request to be processed. 
+It optionally accepts a Handle Persistor, in the case where you want to save a request id, but don't want to wait for that request to be processed.
 
 e.g. I submit a request to a service to report that new stats have been generated. As long as the service returns no error, I'm good to go.
 
 ###### Control Flow Waypoint
- 
-This Waypoint is designed for:  
-1. forcing a request to wait for pre-conditions to be met before progressing in your pipeline. 
+
+This Waypoint is designed for:
+1. forcing a request to wait for pre-conditions to be met before progressing in your pipeline.
 2. making it easy to add validations to your Captain workflow.
 
 It accepts a Status Retriever only. Here are a couple examples of how it could be used:
@@ -199,7 +203,7 @@ e.g. Quarantine a request that is misconfigured.
         return CaptainStatus.COMPLETED; // returning COMPLETED means we go forward.
       } else {
         return CaptainStatus.QUARANTINED; // QUARANTINED means there's some manual intervention needed. alternatively
-        // we could have used CaptainStatus.CANCELLED, which by convention we assume is an unrecoverable state. 
+        // we could have used CaptainStatus.CANCELLED, which by convention we assume is an unrecoverable state.
       }
     }
   }
@@ -215,7 +219,7 @@ Captain allows you to have a single Captain instance process a single manifest (
 
 By providing an app type to captain and a map of app types to manifests, Captain handles multiple manifests. Here's an [example](https://github.com/LiveRamp/captain/blob/master/src/main/java/com/liveramp/captain/example/ExampleCaptainWorkflow.java#L114-L118).
 
-Captain currently forces you to use one of the two provided ManifestManagers: `SingleAppManifestManager` or `MultiAppManifestManager`. These provide convenient but light-weight abstractions for handling manifests.  
+Captain currently forces you to use one of the two provided ManifestManagers: `SingleAppManifestManager` or `MultiAppManifestManager`. These provide convenient but light-weight abstractions for handling manifests.
 
 ### More Advanced Usage
 
@@ -223,7 +227,7 @@ There are extensive javadoc comments on [CaptainBuilder](https://github.com/Live
 
 #### Running Captain in a Distributed Fashion
 
-Captain was designed to be horizontally scalable. Depending on your implementation, however, we may need to cover one more concept. 
+Captain was designed to be horizontally scalable. Depending on your implementation, however, we may need to cover one more concept.
 
 If you are running Captain on multiple nodes and the config producer is just calling `dequeue` from some sort of distributed queue with good concurrency guarantees, you shouldn't need to worry about anything in this section. The basic implementation that we discussed in Getting Started should be enough.
 
@@ -237,8 +241,8 @@ If, however, your config producer does something like this:
 Then when you try to run captain on multiple nodes you'll run into issues, because _how do you guarantee that two Captain nodes do not pick up the same request at the same time_? For example let's say we have Captain Node 01 (CN01) and CN02. If the both hit the db at the same time on a request that is ready to submit data to our fictional analytics service. Then it's possible they'll BOTH submit requests to the analytics service and we'll run 2 map-reduce jobs when we should have run 1. Obviously this compounds with more nodes. Captain offers a locking solution to handle this case.
 
 #### Captain Locks (optional if running on only one node)
- 
-If you are running your Captain instance across multiple nodes, you'll need a lock to prevent different nodes from picking up requests that other nodes are already processing. There are two locks that you'll need to implement: `DaemonLock` and `RequestLock`. 
+
+If you are running your Captain instance across multiple nodes, you'll need a lock to prevent different nodes from picking up requests that other nodes are already processing. There are two locks that you'll need to implement: `DaemonLock` and `RequestLock`.
 
 A `DaemonLock` is a lock that is designed to guarantee that the config producers of know two of your Captain nodes can run at the same time. This prevents 2 Captain nodes picking up the same request.
 
@@ -250,7 +254,7 @@ If you have your own locking toolset, the provided interfaces should provide a p
 
 #### Config Producer Caching
 
-Again in the case where your config producer is just querying to some db, what you can run into is that Captain is making a lot of small queries on your db which can hurt your overall db health. 
+Again in the case where your config producer is just querying to some db, what you can run into is that Captain is making a lot of small queries on your db which can hurt your overall db health.
 
 If you suspect this to be the case, a common practice is to just implement a cache in your config producer. So instead of just pulling one request, try pulling in n requests (where n isn't going to blow your memory; a few hundred is pretty common at LiveRamp). Save these requests in some instance variable / cache in your config producer class, and only query the db every time you deplete the onboard cache.
 
@@ -276,8 +280,8 @@ Letting you pass in factories is a handy way to avoid this, since when calling `
 
 - Captain is a busy loop. Be careful what you log. You can very quickly nuke your inbox or your disk.
 - Captain is a busy loop. Be thoughtful about interactions with external resources (e.g. db interactions).
-- Captain is a busy loop. It provides various controls to prevent it from spinning too fast (e.g. `setConfigWaitTime`). Most of the defaults selected for these controls are intended to provide safe usage. That being said, as you're implementing Captain, be mindful that the busy loop is "spinning" at a reasonable rate. 
-- parallelExecutions: num of requests a captain node should process in parallel. (5 - 20 appears to be pretty conventional. Ideally each time Captain "processes" (meaning any single waypoint) a request the amount of works its doing should take less than a second. So even 5 threads can move you through requests very quickly) 
+- Captain is a busy loop. It provides various controls to prevent it from spinning too fast (e.g. `setConfigWaitTime`). Most of the defaults selected for these controls are intended to provide safe usage. That being said, as you're implementing Captain, be mindful that the busy loop is "spinning" at a reasonable rate.
+- parallelExecutions: num of requests a captain node should process in parallel. (5 - 20 appears to be pretty conventional. Ideally each time Captain "processes" (meaning any single waypoint) a request the amount of works its doing should take less than a second. So even 5 threads can move you through requests very quickly)
 
 Did you know Captain is a busy loop?
 
@@ -293,16 +297,16 @@ If you make it past the "Getting Started" section, you may want to understand a 
 
 #### Retry Policy (FailedRequestPolicy)
 
-In the `CaptainBuilder` you can pass in a `FailedRequestPolicy`. This interface provides you the opportunity to specify how requests should be handled. 
+In the `CaptainBuilder` you can pass in a `FailedRequestPolicy`. This interface provides you the opportunity to specify how requests should be handled.
 
-Given the id of your request, you need to implement `getFailedRequestAction` such that it returns `RETRY`, `QUARANTINE`, or `NO_OP`. 
+Given the id of your request, you need to implement `getFailedRequestAction` such that it returns `RETRY`, `QUARANTINE`, or `NO_OP`.
 `RETRY`: will call the `retry` method that you implemented in your `RequestUpdater`. (note: implementing that method is optional; if you are using retry though, you should implement it; otherwise it defaults to a no op).
 `QUARANTINE`: will call the `quarantine` method that you implemented in your `RequestUpdater`.
 `NO_OP`: will do nothing.
 
 By convention, retry policies tend to look at the updated_at on a request and then determine when it should retry (either fixed term or exponential backoff) or if it has failed too many times such that it should be quarantined. Because this relies on pretty specific request metadata, we don't provide any built in policies and you're required to implement your own.
 
-Here's an example of what it might look in the case described in our [Example App]() 
+Here's an example of what it might look in the case described in our [Example App]()
 
 ```java
   class ExampleFixedTermBackoffRetryPolicy implements FailedRequestPolicy {
@@ -319,11 +323,11 @@ Here's an example of what it might look in the case described in our [Example Ap
       MockRequest request = mockDb.getRequest(id);
       int numFailedAttempts = request.attempts;
       long lastUpdatedAt = request.updatedAt;
-      
+
       if(numFailedAttempts > MAX_FAILED_ATTEMPTS) {
         return FailedRequestAction.QUARANTINE;
       }
-      
+
       if(lastUpdatedAt > System.currentTimeMillis() - TIME_BETWEEN_RETRY.toMillis()) {
         return FailedRequestAction.RETRY;
       } else {
@@ -336,10 +340,10 @@ Here's an example of what it might look in the case described in our [Example Ap
 
 #### Emulating a DAG
 
-When people think of a workflow-engine, they think of a DAG. Captain grew organically out of a few products at LiveRamp that really only required linear workflows (even if at the time they were represented by complicated DAGs). Due to this pedigree, Captain is opinionated towards linear workflows to enforce building simple workflows. Thus DAGs are not first-class citizens in Captain. Probably the biggest roadblock for DAG's feeling at home within Captain is that choice that it leaves the entire persistence layer to the consumer. Persisting the state of a DAG is simply more complex than persisting the state of a linear workflow. Captain was not really built with the DAG in mind, though you can emulate it using Captain. I hypothesize there are some significant infrastructure hurdles (that are certainly solvable) to making it such that DAGs are easy to use in Captain. That being said, let's talk about how you can emulate a DAG in Captain today. 
+When people think of a workflow-engine, they think of a DAG. Captain grew organically out of a few products at LiveRamp that really only required linear workflows (even if at the time they were represented by complicated DAGs). Due to this pedigree, Captain is opinionated towards linear workflows to enforce building simple workflows. Thus DAGs are not first-class citizens in Captain. Probably the biggest roadblock for DAG's feeling at home within Captain is that choice that it leaves the entire persistence layer to the consumer. Persisting the state of a DAG is simply more complex than persisting the state of a linear workflow. Captain was not really built with the DAG in mind, though you can emulate it using Captain. I hypothesize there are some significant infrastructure hurdles (that are certainly solvable) to making it such that DAGs are easy to use in Captain. That being said, let's talk about how you can emulate a DAG in Captain today.
 
 A couple approaches:
-1. Use optional steps. 
+1. Use optional steps.
 
 Check out the Optional Steps section to understand how to use them. In short, you can use optional steps to emulate a DAG by designing the predicates for the optional to route the request as you might in a DAG.
 2. Reduce your DAG to a linear flow manually
@@ -353,19 +357,19 @@ waypoint 2: sync waypoint with handle persistor to service 2. it saves service 2
 waypoint 3: flowcontrol waypoint that uses service 1 request id to determine if service 1 has completed work and uses service 2 request id to determine if service 2 has completed work. only when both are complete does it progress.
 ```
 
-There's a pretty low ceiling for which this will be practical. In the example provided where you essentially just want two long running steps to happen in parallel instead of serially, it's pretty doable. 
+There's a pretty low ceiling for which this will be practical. In the example provided where you essentially just want two long running steps to happen in parallel instead of serially, it's pretty doable.
 
 3. Dynamically build manifests
 
-Captain provides a `DefaultManifestImpl` which accepts a list of waypoints. That said, `Manifest` and `ManifestFactory` are both interfaces that any consumer can implement. So you can pretty much do anything you want here by implementing your manifest such that `getNextStep` returns a step from a DAG structure instead of a list. Your capacity to manage complexity is the limit on this. 
+Captain provides a `DefaultManifestImpl` which accepts a list of waypoints. That said, `Manifest` and `ManifestFactory` are both interfaces that any consumer can implement. So you can pretty much do anything you want here by implementing your manifest such that `getNextStep` returns a step from a DAG structure instead of a list. Your capacity to manage complexity is the limit on this.
 
 #### Optional Steps
 
-All waypoints can accept an optional predicate. If that predicate evaluates to false, that waypoint will be skipped. 
+All waypoints can accept an optional predicate. If that predicate evaluates to false, that waypoint will be skipped.
 
 #### Maintainers
 
 (alphabetical)
-@cgardens
-@h-wang94 
-@jpefaur
+* @cgardens
+* @h-wang94
+* @jpefaur
