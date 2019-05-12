@@ -146,7 +146,7 @@ note: "submits work to a service" technically your waypoint can just do work in 
 
 ###### Synchronous Waypoint
 
-This Wayoint submits work to a service, and then, as long as the submission of that work does not fail, moves the request on to the next step in your manifest.
+This Waypoint submits work to a service, and then, as long as the submission of that work does not fail, moves the request on to the next step in your manifest.
 
 It accepts a Request Submitter.
 
