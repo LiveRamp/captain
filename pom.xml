@@ -42,7 +42,7 @@
   <parent>
     <groupId>com.liveramp</groupId>
     <artifactId>pom-common</artifactId>
-    <version>1.0-SNAPSHOT</version>
+    <version>1.1-SNAPSHOT</version>
   </parent>
 
   <dependencies>
@@ -76,13 +76,10 @@
 
   <repositories>
     <repository>
-      <id>all-snapshots</id>
-      <name>Liveramp Repositories</name>
-      <url>http://repository.liveramp.com/artifactory/libs-snapshot-local</url>
-      <snapshots>
-        <enabled>true</enabled>
-        <updatePolicy>always</updatePolicy>
-      </snapshots>
+      <id>sonatype-snapshots</id>
+      <url>https://oss.sonatype.org/content/repositories/snapshots</url>
+      <releases><enabled>false</enabled></releases>
+      <snapshots><enabled>true</enabled></snapshots>
     </repository>
   </repositories>
 
