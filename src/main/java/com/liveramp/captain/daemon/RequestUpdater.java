@@ -20,7 +20,7 @@ public interface RequestUpdater {
 
   }
 
-  default void pending(long id) {
+  default void ready(long id) {
 
   }
 }
