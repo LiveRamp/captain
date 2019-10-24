@@ -19,4 +19,8 @@ public interface RequestUpdater {
   default void quarantine(long id) {
 
   }
+
+  default void pending(long id) {
+
+  }
 }

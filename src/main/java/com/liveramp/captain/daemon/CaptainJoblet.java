@@ -1,6 +1,7 @@
 package com.liveramp.captain.daemon;
 
 
+import com.liveramp.captain.exception.CaptainNamedException;
 import java.util.Optional;
 
 import org.slf4j.Logger;
@@ -188,7 +189,13 @@ public class CaptainJoblet implements Joblet {
       notifier.notify(subject, e, CaptainNotifier.NotificationLevel.ERROR);
       requestUpdater.cancel(id);
       return;
-    } catch (Throwable e) {
+    } catch(CaptainNamedException ce)
+    {
+      String subject = String.format("%s: handle transient submission failed for request %s", CaptainAlertHelpers.getHostName(), id);
+      notifier.notify(subject, ce, CaptainNotifier.NotificationLevel.ERROR);
+      requestUpdater.pending(id);
+      return;
+    }catch (Throwable e) {
       String subject = String.format("%s: error while submitting request %s", CaptainAlertHelpers.getHostName(), id);
       notifier.notify(subject, e, CaptainNotifier.NotificationLevel.ERROR);
       requestUpdater.fail(id);
