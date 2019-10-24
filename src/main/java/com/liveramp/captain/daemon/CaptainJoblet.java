@@ -1,15 +1,9 @@
 package com.liveramp.captain.daemon;
 
 
-import com.liveramp.captain.exception.CaptainNamedException;
-import java.util.Optional;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.slf4j.MDC;
-
 import com.liveramp.captain.exception.CaptainCouldNotFindNextStep;
 import com.liveramp.captain.exception.CaptainPersistorException;
+import com.liveramp.captain.exception.CaptainSubmissionException;
 import com.liveramp.captain.lib.CaptainAlertHelpers;
 import com.liveramp.captain.manifest.Manifest;
 import com.liveramp.captain.manifest.ManifestFactory;
@@ -24,6 +18,10 @@ import com.liveramp.captain.waypoint.WaypointSubmitter;
 import com.liveramp.captain.waypoint.WaypointType;
 import com.liveramp.daemon_lib.Joblet;
 import com.liveramp.daemon_lib.utils.DaemonException;
+import java.util.Optional;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.slf4j.MDC;
 
 public class CaptainJoblet implements Joblet {
   private CaptainNotifier notifier;
@@ -189,7 +187,7 @@ public class CaptainJoblet implements Joblet {
       notifier.notify(subject, e, CaptainNotifier.NotificationLevel.ERROR);
       requestUpdater.cancel(id);
       return;
-    } catch(CaptainNamedException ce)
+    } catch(CaptainSubmissionException ce)
     {
       String subject = String.format("%s: handle transient submission failed for request %s", CaptainAlertHelpers.getHostName(), id);
       notifier.notify(subject, ce, CaptainNotifier.NotificationLevel.ERROR);
