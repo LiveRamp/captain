@@ -40,7 +40,8 @@ public class CaptainJoblet implements Joblet {
       ManifestManager manifestManager,
       boolean supportsPending,
       boolean rammingSpeed,
-      FailedRequestPolicy failedRequestPolicy) {
+      FailedRequestPolicy failedRequestPolicy
+  ) {
     this.notifier = notifier;
     this.config = config;
     this.requestUpdater = requestUpdater;
@@ -59,7 +60,8 @@ public class CaptainJoblet implements Joblet {
       ManifestManager manifestManager,
       boolean supportsPending,
       boolean rammingSpeed,
-      FailedRequestPolicy failedRequestPolicy) {
+      FailedRequestPolicy failedRequestPolicy
+  ) {
     return new CaptainJoblet(config, notifier, requestUpdater, manifestManager, supportsPending, rammingSpeed, failedRequestPolicy);
   }
 
@@ -187,13 +189,12 @@ public class CaptainJoblet implements Joblet {
       notifier.notify(subject, e, CaptainNotifier.NotificationLevel.ERROR);
       requestUpdater.cancel(id);
       return;
-    } catch(CaptainSubmissionException ce)
-    {
+    } catch (CaptainSubmissionException ce) {
       String subject = String.format("%s: handle transient submission failed for request %s", CaptainAlertHelpers.getHostName(), id);
       notifier.notify(subject, ce, CaptainNotifier.NotificationLevel.ERROR);
-      requestUpdater.pending(id);
+      requestUpdater.ready(id);
       return;
-    }catch (Throwable e) {
+    } catch (Throwable e) {
       String subject = String.format("%s: error while submitting request %s", CaptainAlertHelpers.getHostName(), id);
       notifier.notify(subject, e, CaptainNotifier.NotificationLevel.ERROR);
       requestUpdater.fail(id);
