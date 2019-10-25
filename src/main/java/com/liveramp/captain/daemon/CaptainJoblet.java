@@ -3,7 +3,8 @@ package com.liveramp.captain.daemon;
 
 import com.liveramp.captain.exception.CaptainCouldNotFindNextStep;
 import com.liveramp.captain.exception.CaptainPersistorException;
-import com.liveramp.captain.exception.CaptainSubmissionException;
+import com.liveramp.captain.exception.CaptainStatusRetrieverException;
+import com.liveramp.captain.exception.CaptainSubmissionFailedException;
 import com.liveramp.captain.lib.CaptainAlertHelpers;
 import com.liveramp.captain.manifest.Manifest;
 import com.liveramp.captain.manifest.ManifestFactory;
@@ -189,10 +190,10 @@ public class CaptainJoblet implements Joblet {
       notifier.notify(subject, e, CaptainNotifier.NotificationLevel.ERROR);
       requestUpdater.cancel(id);
       return;
-    } catch (CaptainSubmissionException ce) {
+    } catch (CaptainSubmissionFailedException ce) {
       String subject = String.format("%s: handle transient submission failed for request %s", CaptainAlertHelpers.getHostName(), id);
       notifier.notify(subject, ce, CaptainNotifier.NotificationLevel.ERROR);
-      requestUpdater.ready(id);
+      requestUpdater.retry(id);
       return;
     } catch (Throwable e) {
       String subject = String.format("%s: error while submitting request %s", CaptainAlertHelpers.getHostName(), id);
@@ -251,6 +252,11 @@ public class CaptainJoblet implements Joblet {
 
       LOG.info(String.format("current step %s, current status: %s, next status: %s", config.getStep(), config.getStatus(), targetStatus));
       requestUpdater.setStatus(id, config.getStep(), config.getStatus(), targetStatus);
+    } catch (CaptainStatusRetrieverException ce) {
+      String subject = String.format("%s: handle transient status retrieval failed for request %s", CaptainAlertHelpers.getHostName(), config.getId());
+      notifier.notify(subject, ce, CaptainNotifier.NotificationLevel.ERROR);
+      requestUpdater.retry(config.getId());
+      return;
     } catch (Exception e) {
       String subject = String.format("%s: error while checking if service has begun processing req %s in step: %s",
           config.getId(), CaptainAlertHelpers.getHostName(), config.getStep()
@@ -302,6 +308,11 @@ public class CaptainJoblet implements Joblet {
         CaptainJoblet.of(newConfig, notifier, requestUpdater, manifestManager, supportsPending, rammingSpeed, failedRequestPolicy).run();
       }
 
+    } catch (CaptainStatusRetrieverException ce) {
+      String subject = String.format("%s: handle transient status retrieval for request %s", CaptainAlertHelpers.getHostName(), config.getId());
+      notifier.notify(subject, ce, CaptainNotifier.NotificationLevel.ERROR);
+      requestUpdater.retry(config.getId());
+      return;
     } catch (Exception e) {
       String subject = String.format("%s: error while checking status of req %s in step: %s",
           CaptainAlertHelpers.getHostName(), config.getId(), config.getStep()
