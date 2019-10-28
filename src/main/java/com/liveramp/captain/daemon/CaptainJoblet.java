@@ -1,14 +1,9 @@
 package com.liveramp.captain.daemon;
 
 
-import java.util.Optional;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.slf4j.MDC;
-
 import com.liveramp.captain.exception.CaptainCouldNotFindNextStep;
 import com.liveramp.captain.exception.CaptainPersistorException;
+import com.liveramp.captain.exception.CaptainTransientFailureException;
 import com.liveramp.captain.lib.CaptainAlertHelpers;
 import com.liveramp.captain.manifest.Manifest;
 import com.liveramp.captain.manifest.ManifestFactory;
@@ -23,6 +18,10 @@ import com.liveramp.captain.waypoint.WaypointSubmitter;
 import com.liveramp.captain.waypoint.WaypointType;
 import com.liveramp.daemon_lib.Joblet;
 import com.liveramp.daemon_lib.utils.DaemonException;
+import java.util.Optional;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.slf4j.MDC;
 
 public class CaptainJoblet implements Joblet {
   private CaptainNotifier notifier;
@@ -41,7 +40,8 @@ public class CaptainJoblet implements Joblet {
       ManifestManager manifestManager,
       boolean supportsPending,
       boolean rammingSpeed,
-      FailedRequestPolicy failedRequestPolicy) {
+      FailedRequestPolicy failedRequestPolicy
+  ) {
     this.notifier = notifier;
     this.config = config;
     this.requestUpdater = requestUpdater;
@@ -60,7 +60,8 @@ public class CaptainJoblet implements Joblet {
       ManifestManager manifestManager,
       boolean supportsPending,
       boolean rammingSpeed,
-      FailedRequestPolicy failedRequestPolicy) {
+      FailedRequestPolicy failedRequestPolicy
+  ) {
     return new CaptainJoblet(config, notifier, requestUpdater, manifestManager, supportsPending, rammingSpeed, failedRequestPolicy);
   }
 
@@ -188,6 +189,10 @@ public class CaptainJoblet implements Joblet {
       notifier.notify(subject, e, CaptainNotifier.NotificationLevel.ERROR);
       requestUpdater.cancel(id);
       return;
+    } catch (CaptainTransientFailureException ce) {
+      String subject = String.format("%s: Transient failure while submitting requests %s. Doing nothing", CaptainAlertHelpers.getHostName(), id);
+      notifier.notify(subject, ce, CaptainNotifier.NotificationLevel.ERROR);
+      return;
     } catch (Throwable e) {
       String subject = String.format("%s: error while submitting request %s", CaptainAlertHelpers.getHostName(), id);
       notifier.notify(subject, e, CaptainNotifier.NotificationLevel.ERROR);
@@ -245,6 +250,10 @@ public class CaptainJoblet implements Joblet {
 
       LOG.info(String.format("current step %s, current status: %s, next status: %s", config.getStep(), config.getStatus(), targetStatus));
       requestUpdater.setStatus(id, config.getStep(), config.getStatus(), targetStatus);
+    } catch (CaptainTransientFailureException ce) {
+      String subject = String.format("%s: Transient failure while retrieving status for request %s. Doing nothing.", CaptainAlertHelpers.getHostName(), config.getId());
+      notifier.notify(subject, ce, CaptainNotifier.NotificationLevel.ERROR);
+      return;
     } catch (Exception e) {
       String subject = String.format("%s: error while checking if service has begun processing req %s in step: %s",
           config.getId(), CaptainAlertHelpers.getHostName(), config.getStep()
@@ -296,6 +305,10 @@ public class CaptainJoblet implements Joblet {
         CaptainJoblet.of(newConfig, notifier, requestUpdater, manifestManager, supportsPending, rammingSpeed, failedRequestPolicy).run();
       }
 
+    } catch (CaptainTransientFailureException ce) {
+      String subject = String.format("%s: Transient failure while retrieving status for request %s. Doing nothing.", CaptainAlertHelpers.getHostName(), config.getId());
+      notifier.notify(subject, ce, CaptainNotifier.NotificationLevel.ERROR);
+      return;
     } catch (Exception e) {
       String subject = String.format("%s: error while checking status of req %s in step: %s",
           CaptainAlertHelpers.getHostName(), config.getId(), config.getStep()
