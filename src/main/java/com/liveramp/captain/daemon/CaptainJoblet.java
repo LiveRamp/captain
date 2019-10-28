@@ -190,7 +190,7 @@ public class CaptainJoblet implements Joblet {
       requestUpdater.cancel(id);
       return;
     } catch (CaptainTransientFailureException ce) {
-      String subject = String.format("%s: Transient failure while submitting requests %s. Do nothing", CaptainAlertHelpers.getHostName(), id);
+      String subject = String.format("%s: Transient failure while submitting requests %s. Doing nothing", CaptainAlertHelpers.getHostName(), id);
       notifier.notify(subject, ce, CaptainNotifier.NotificationLevel.ERROR);
       return;
     } catch (Throwable e) {
