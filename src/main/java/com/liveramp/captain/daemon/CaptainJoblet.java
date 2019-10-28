@@ -190,7 +190,7 @@ public class CaptainJoblet implements Joblet {
       requestUpdater.cancel(id);
       return;
     } catch (CaptainTransientFailureException ce) {
-      String subject = String.format("%s: handle transient submission failed for request %s", CaptainAlertHelpers.getHostName(), id);
+      String subject = String.format("%s: Transient failure while submitting requests %s. Do nothing", CaptainAlertHelpers.getHostName(), id);
       notifier.notify(subject, ce, CaptainNotifier.NotificationLevel.ERROR);
       return;
     } catch (Throwable e) {
@@ -251,7 +251,7 @@ public class CaptainJoblet implements Joblet {
       LOG.info(String.format("current step %s, current status: %s, next status: %s", config.getStep(), config.getStatus(), targetStatus));
       requestUpdater.setStatus(id, config.getStep(), config.getStatus(), targetStatus);
     } catch (CaptainTransientFailureException ce) {
-      String subject = String.format("%s: handle transient status retrieval failed for request %s", CaptainAlertHelpers.getHostName(), config.getId());
+      String subject = String.format("%s: Transient failure while retrieving status for request %s. Doing nothing.", CaptainAlertHelpers.getHostName(), config.getId());
       notifier.notify(subject, ce, CaptainNotifier.NotificationLevel.ERROR);
       return;
     } catch (Exception e) {
@@ -306,7 +306,7 @@ public class CaptainJoblet implements Joblet {
       }
 
     } catch (CaptainTransientFailureException ce) {
-      String subject = String.format("%s: handle transient status retrieval for request %s", CaptainAlertHelpers.getHostName(), config.getId());
+      String subject = String.format("%s: Transient failure while retrieving status for request %s. Doing nothing.", CaptainAlertHelpers.getHostName(), config.getId());
       notifier.notify(subject, ce, CaptainNotifier.NotificationLevel.ERROR);
       return;
     } catch (Exception e) {
