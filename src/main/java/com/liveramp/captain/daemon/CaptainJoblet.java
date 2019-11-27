@@ -139,7 +139,7 @@ public class CaptainJoblet implements Joblet {
       long id = config.getId();
       Optional<CaptainStep> nextStepOptional = manifest.getNextStep(config.getStep(), config.getId());
 
-      LOG.info(String.format("current step: %s, current status: %s, next step: %s, next status: %s", config.getStep(), config.getStatus(), nextStepOptional, CaptainStatus.READY));
+      LOG.debug(String.format("current step: %s, current status: %s, next step: %s, next status: %s", config.getStep(), config.getStatus(), nextStepOptional, CaptainStatus.READY));
 
       if (nextStepOptional.isPresent()) {
 
@@ -212,7 +212,7 @@ public class CaptainJoblet implements Joblet {
       targetStatus = CaptainStatus.COMPLETED;
     }
 
-    LOG.info(String.format("current step %s, current status: %s, next status: %s", config.getStep(), config.getStatus(), targetStatus));
+    LOG.debug(String.format("current step %s, current status: %s, next status: %s", config.getStep(), config.getStatus(), targetStatus));
     requestUpdater.setStatus(id, config.getStep(), config.getStatus(), targetStatus);
 
     if (rammingSpeed) {
@@ -248,7 +248,7 @@ public class CaptainJoblet implements Joblet {
         targetStatus = config.getStatus();
       }
 
-      LOG.info(String.format("current step %s, current status: %s, next status: %s", config.getStep(), config.getStatus(), targetStatus));
+      LOG.debug(String.format("current step %s, current status: %s, next status: %s", config.getStep(), config.getStatus(), targetStatus));
       requestUpdater.setStatus(id, config.getStep(), config.getStatus(), targetStatus);
     } catch (CaptainTransientFailureException ce) {
       String subject = String.format("%s: Transient failure while retrieving status for request %s. Doing nothing.", CaptainAlertHelpers.getHostName(), config.getId());
@@ -292,7 +292,7 @@ public class CaptainJoblet implements Joblet {
         throw new RuntimeException(String.format("request %s in an unexpected state. in the status_retriever step it was in status %s", id, status));
       }
 
-      LOG.info(String.format("current step %s, current status: %s, next status: %s", config.getStep(), config.getStatus(), targetStatus));
+      LOG.debug(String.format("current step %s, current status: %s, next status: %s", config.getStep(), config.getStatus(), targetStatus));
       requestUpdater.setStatus(id, config.getStep(), config.getStatus(), targetStatus);
 
       if (rammingSpeed && targetStatus.equals(CaptainStatus.COMPLETED)) {
