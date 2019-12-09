@@ -50,7 +50,7 @@ public class CaptainJoblet implements Joblet {
     this.rammingSpeed = rammingSpeed;
     this.failedRequestPolicy = failedRequestPolicy;
 
-    LOG.info("captain config: " + config);
+    LOG.debug("captain config: " + config);
   }
 
   public static CaptainJoblet of(
