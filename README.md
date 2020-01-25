@@ -244,11 +244,11 @@ Then when you try to run captain on multiple nodes you'll run into issues, becau
 
 If you are running your Captain instance across multiple nodes, you'll need a lock to prevent different nodes from picking up requests that other nodes are already processing. There are two locks that you'll need to implement: `DaemonLock` and `RequestLock`.
 
-A `DaemonLock` is a lock that is designed to guarantee that the config producers of know two of your Captain nodes can run at the same time. This prevents 2 Captain nodes picking up the same request.
+A `DaemonLock` is a lock that is designed to guarantee that the config producers of two of your Captain nodes can run at the same time. This prevents two Captain nodes from picking up the same request.
 
-A `RequestLock` is a request level lock. It allows you to guarantee that no other node tries to pick up a node that you're currently processing. After the daemon lock releases, you still don't want another node to pull your request out of the db.
+A `RequestLock` is a request level lock. It allows you to guarantee that no other node tries to pick up a request that you're currently processing. After the daemon lock releases, you still don't want another node to pull your request out of the db.
 
-If you already work with Zookkeeper, you can use Captain's built-in locks. Call `setZkLocks` in `CaptainBuilder` and pass in your Zookkeeper `CuratorFramework`. Captain will do the rest.
+If you already work with ZooKeeper, you can use Captain's built-in locks. Call `setZkLocks` in `CaptainBuilder` and pass in your ZooKeeper `CuratorFramework`. Captain will do the rest.
 
 If you have your own locking toolset, the provided interfaces should provide a pretty easy guide to plugging it into Captain.
 
