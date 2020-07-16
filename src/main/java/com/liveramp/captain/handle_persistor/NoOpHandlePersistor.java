@@ -2,24 +2,17 @@ package com.liveramp.captain.handle_persistor;
 
 public class NoOpHandlePersistor<ServiceHandle> implements HandlePersistor<ServiceHandle> {
 
-  private NoOpHandlePersistor() {
-
-  }
-
   @Override
   public void persist(Long id, ServiceHandle o) {
-
+    // no-op
   }
 
-  public static HandlePersistorFactory get() {
-    return new NoOpHandlePersistor.Factory();
-  }
-
-  private static class Factory implements HandlePersistorFactory {
-
-    @Override
-    public HandlePersistor create() {
-      return new NoOpHandlePersistor();
-    }
+  /**
+   * This method predates the use of method references and functional
+   * interfaces.  Modern callers can use {@code NoOpHandlePersistor::new}
+   * instead.
+   */
+  public static <ServiceHandle> HandlePersistorFactory<ServiceHandle> get() {
+    return NoOpHandlePersistor::new;
   }
 }
