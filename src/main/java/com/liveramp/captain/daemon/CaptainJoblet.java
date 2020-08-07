@@ -102,14 +102,14 @@ public class CaptainJoblet implements Joblet {
         default:
           throw new DaemonException("Provided config has a job status that shouldn't be handled by the captain " + config);
       }
-    } catch (Exception e) {
+    } catch (Throwable t) {
       notifier.notify(
           String.format("%s: error in CaptainJoblet", CaptainAlertHelpers.getHostName()),
-          e,
+          t,
           CaptainNotifier.NotificationLevel.ERROR);
-      LOG.error(e.getLocalizedMessage());
+      LOG.error(t.getLocalizedMessage());
       requestUpdater.fail(config.getId());
-      throw e;
+      throw t;
     } finally {
       MDC.remove("id");
     }
