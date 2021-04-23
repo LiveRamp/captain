@@ -8,7 +8,9 @@ public enum CaptainStatus {
   COMPLETED(4),
   FAILED(5),
   QUARANTINED(6),
-  QUARANTINED_PO(7);
+  QUARANTINED_INTERNAL(7),
+  QUARANTINED_EXTERNAL(8),
+  QUARANTINED_ENG(9);
 
   private final int value;
 
@@ -37,7 +39,11 @@ public enum CaptainStatus {
       case 6:
         return QUARANTINED;
       case 7:
-        return QUARANTINED_PO;
+        return QUARANTINED_INTERNAL;
+      case 8:
+        return QUARANTINED_EXTERNAL;
+      case 9:
+        return QUARANTINED_ENG;
       default:
         return null;
     }
